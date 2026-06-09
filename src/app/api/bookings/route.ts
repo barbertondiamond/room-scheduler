@@ -1,0 +1,71 @@
+
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const { name, email, teamGroup, roomId, date, startTime, durationBlocks, title, opponent, notes } = body;
+
+    if (!name || !teamGroup || !roomId || !date || !startTime || !durationBlocks) {
+      return NextResponse.json(
+        { success: false, message: "Missing required booking fields." },
+        { status: 400 }
+      );
+    }
+
+    const startTimeMinutes = timeToMinutes(startTime);
+    const endTimeMinutes = startTimeMinutes + Number(durationBlocks) * 30;
+
+    const bookingDate = new Date(`${date}T00:00:00`);
+    const nextDay = new Date(bookingDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    const existingBooking = await prisma.booking.findFirst({
+      where: {
+        roomId,
+        status: "ACTIVE",
+        bookingDate: { gte: bookingDate, lt: nextDay },
+        startTimeMinutes: { lt: endTimeMinutes },
+        endTimeMinutes: { gt: startTimeMinutes },
+      },
+    });
+
+    if (existingBooking) {
+      return NextResponse.json(
+        { success: false, message: "That field is already booked for that time." },
+        { status: 409 }
+      );
+    }
+
+    const booking = await prisma.booking.create({
+      data: {
+        roomId,
+        bookingDate,
+        startTimeMinutes,
+        endTimeMinutes,
+        durationBlocks: Number(durationBlocks),
+        bookedByName: name,
+        bookedByEmail: email || null,
+        title: title || null,
+        notes: notes || null,
+        teamGroup,
+        opponent: opponent || null,
+      },
+    });
+
+    return NextResponse.json({ success: true, message: "Booking saved successfully.", booking });
+  } catch (error) {
+    console.error("Error creating booking:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to save booking." },
+      { status: 500 }
+    );
+  }
+}

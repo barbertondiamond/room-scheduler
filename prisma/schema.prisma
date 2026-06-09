@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  bookings    Booking[]
+  blackouts   RoomBlackout[]
+}
+
+model AdminUser {
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  role            UserRole       @default(ADMIN)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  auditLogs       AuditLog[]
+  createdBookings Booking[]      @relation("CreatedBookings")
+  updatedBookings Booking[]      @relation("UpdatedBookings")
+  blackouts       RoomBlackout[]
+}
+
+model Booking {
+  id               String        @id @default(uuid())
+  roomId           String
+  bookingDate      DateTime
+  startTimeMinutes Int
+  endTimeMinutes   Int
+  durationBlocks   Int
+  bookedByName     String
+  bookedByEmail    String?
+  title            String?
+  notes            String?
+  teamGroup        String?
+  opponent         String?
+  umpire           String?
+  status           BookingStatus @default(ACTIVE)
+  overrideConflict Boolean       @default(false)
+  createdByUserId  String?
+  updatedByUserId  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  createdBy        AdminUser?    @relation("CreatedBookings", fields: [createdByUserId], references: [id])
+  room             Room          @relation(fields: [roomId], references: [id])
+  updatedBy        AdminUser?    @relation("UpdatedBookings", fields: [updatedByUserId], references: [id])
+
+  @@index([roomId, bookingDate])
+  @@index([bookingDate])
+}
+
+model RoomBlackout {
+  id              String     @id @default(uuid())
+  roomId          String
+  startDateTime   DateTime
+  endDateTime     DateTime
+  reason          String?
+  createdByUserId String?
+  createdAt       DateTime   @default(now())
+  createdBy       AdminUser? @relation(fields: [createdByUserId], references: [id])
+  room            Room       @relation(fields: [roomId], references: [id])
+
+  @@index([roomId])
+}
+
+model AuditLog {
+  id                String     @id @default(uuid())
+  entityType        String
+  entityId          String
+  action            String
+  detailsJson       Json?
+  performedByUserId String?
+  createdAt         DateTime   @default(now())
+  performedBy       AdminUser? @relation(fields: [performedByUserId], references: [id])
+
+  @@index([entityType, entityId])
+}
+
+enum BookingStatus {
+  ACTIVE
+  CANCELED
+}
+
+enum UserRole {
+  ADMIN
+  SUPER_ADMIN
+}
