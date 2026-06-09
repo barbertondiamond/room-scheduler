@@ -1,19 +1,226 @@
+
 import Link from "next/link";
 
-export default function Home() {
-  return (
-    <main style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1>Barberton Diamond Sports Field Scheduler</h1>
-      <p>Welcome to the field scheduling system.</p>
+function pad(value: number) {
+  return String(value).padStart(2, "0");
+}
 
-      <ul style={{ lineHeight: "2" }}>
-        <li>
-          <Link href="/book">Go to Book a Field</Link>
-        </li>
-        <li>
-          <Link href="/bookings">View Bookings Calendar</Link>
-        </li>
-      </ul>
+function toDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export default function HomePage() {
+  const todayValue = toDateInputValue(new Date());
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #eff6ff 0%, #f8fafc 45%, #ffffff 100%)",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <section
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "3rem 1.5rem 2rem",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1px solid #dbe3f0",
+            borderRadius: "24px",
+            padding: "2rem",
+            boxShadow: "0 14px 40px rgba(15, 23, 42, 0.08)",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              padding: "0.35rem 0.75rem",
+              borderRadius: "999px",
+              backgroundColor: "#dbeafe",
+              color: "#1d4ed8",
+              fontWeight: 700,
+              fontSize: "0.88rem",
+              marginBottom: "1rem",
+            }}
+          >
+            Barberton Diamond Sports
+          </div>
+
+          <h1
+            style={{
+              fontSize: "2.5rem",
+              lineHeight: 1.15,
+              marginTop: 0,
+              marginBottom: "0.85rem",
+              color: "#0f172a",
+              maxWidth: "820px",
+            }}
+          >
+            Manage field bookings, games, and umpire coverage in one place.
+          </h1>
+
+          <p
+            style={{
+              fontSize: "1.05rem",
+              lineHeight: 1.65,
+              color: "#475569",
+              marginTop: 0,
+              marginBottom: "1.75rem",
+              maxWidth: "760px",
+            }}
+          >
+            Book a field, review the calendar in day or week view, and keep game assignments organized — including opponent, group, and umpire tracking.
+          </p>
+
+          <div style={{ display: "flex", gap: "0.9rem", flexWrap: "wrap", marginBottom: "1.75rem" }}>
+            <Link
+              href="/book"
+              style={{
+                display: "inline-block",
+                padding: "0.9rem 1.25rem",
+                backgroundColor: "#2563eb",
+                color: "#ffffff",
+                borderRadius: "12px",
+                textDecoration: "none",
+                fontWeight: 700,
+                boxShadow: "0 10px 24px rgba(37, 99, 235, 0.24)",
+              }}
+            >
+              Book a Field
+            </Link>
+
+            <Link
+              href={`/bookings?date=${todayValue}&view=week`}
+              style={{
+                display: "inline-block",
+                padding: "0.9rem 1.25rem",
+                backgroundColor: "#eff6ff",
+                color: "#1d4ed8",
+                borderRadius: "12px",
+                textDecoration: "none",
+                fontWeight: 700,
+                border: "1px solid #bfdbfe",
+              }}
+            >
+              View Calendar
+            </Link>
+
+            <Link
+              href="/admin"
+              style={{
+                display: "inline-block",
+                padding: "0.9rem 1.25rem",
+                backgroundColor: "#ede9fe",
+                color: "#6d28d9",
+                borderRadius: "12px",
+                textDecoration: "none",
+                fontWeight: 700,
+                border: "1px solid #ddd6fe",
+              }}
+            >
+              Admin Tools
+            </Link>
+          </div>
+
+          <div style={{ display: "grid", gap: "0.85rem" }}>
+            {[
+              "Day and week calendar views with clickable bookings",
+              "Game and scrimmage details with opponent and group tracking",
+              "Admin workflow for umpire scheduling and recent booking changes",
+            ].map((item) => (
+              <div key={item} style={{ display: "flex", gap: "0.7rem", alignItems: "flex-start", color: "#334155" }}>
+                <div
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "999px",
+                    backgroundColor: "#2563eb",
+                    marginTop: "0.45rem",
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ lineHeight: 1.55 }}>{item}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 1.5rem 3rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gap: "1rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          }}
+        >
+          {[
+            {
+              title: "Public booking",
+              text: "Coaches and volunteers can submit field requests with group and opponent details in a few clicks.",
+              href: "/book",
+              linkLabel: "Open booking form",
+              accent: "#dbeafe",
+              border: "#bfdbfe",
+              color: "#1d4ed8",
+            },
+            {
+              title: "Calendar views",
+              text: "Switch between detailed day scheduling and a compact weekly planning view to spot conflicts quickly.",
+              href: `/bookings?date=${todayValue}&view=day`,
+              linkLabel: "Open calendar",
+              accent: "#fef3c7",
+              border: "#fde68a",
+              color: "#b45309",
+            },
+            {
+              title: "Admin oversight",
+              text: "Review changes, manage game assignments, and update umpire coverage from a central dashboard.",
+              href: "/admin",
+              linkLabel: "Open admin page",
+              accent: "#ede9fe",
+              border: "#ddd6fe",
+              color: "#6d28d9",
+            },
+          ].map((card) => (
+            <div
+              key={card.title}
+              style={{
+                backgroundColor: "#ffffff",
+                border: `1px solid ${card.border}`,
+                borderRadius: "18px",
+                padding: "1.35rem",
+                boxShadow: "0 10px 25px rgba(15, 23, 42, 0.05)",
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-block",
+                  padding: "0.35rem 0.7rem",
+                  borderRadius: "999px",
+                  backgroundColor: card.accent,
+                  color: card.color,
+                  fontWeight: 700,
+                  fontSize: "0.82rem",
+                  marginBottom: "0.8rem",
+                }}
+              >
+                {card.title}
+              </div>
+              <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#0f172a", marginBottom: "0.55rem" }}>{card.title}</div>
+              <div style={{ color: "#475569", lineHeight: 1.6, marginBottom: "1rem" }}>{card.text}</div>
+              <Link href={card.href} style={{ color: card.color, textDecoration: "none", fontWeight: 700 }}>
+                {card.linkLabel} →
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
