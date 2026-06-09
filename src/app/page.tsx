@@ -61,7 +61,7 @@ export default function HomePage() {
               maxWidth: "820px",
             }}
           >
-            Manage field bookings, games, and umpire coverage in one place.
+            Manage field bookings and games.
           </h1>
 
           <p
@@ -74,7 +74,7 @@ export default function HomePage() {
               maxWidth: "760px",
             }}
           >
-            Book a field, review the calendar in day or week view, and keep game assignments organized — including opponent, group, and umpire tracking.
+            Book a field, review the calendar in day or week view, and keep game assignments organized.
           </p>
 
           <div style={{ display: "flex", gap: "0.9rem", flexWrap: "wrap", marginBottom: "1.75rem" }}>
@@ -131,7 +131,7 @@ export default function HomePage() {
             {[
               "Day and week calendar views with clickable bookings",
               "Game and scrimmage details with opponent and group tracking",
-              "Admin workflow for umpire scheduling and recent booking changes",
+              "Admin for umpire scheduling and recent booking changes",
             ].map((item) => (
               <div key={item} style={{ display: "flex", gap: "0.7rem", alignItems: "flex-start", color: "#334155" }}>
                 <div
@@ -162,7 +162,7 @@ export default function HomePage() {
           {[
             {
               title: "Public booking",
-              text: "Coaches and volunteers can submit field requests with group and opponent details in a few clicks.",
+              text: "Coaches and volunteers can submit field requests with group and opponent details.",
               href: "/book",
               linkLabel: "Open booking form",
               accent: "#dbeafe",

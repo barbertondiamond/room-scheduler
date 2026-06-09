@@ -146,6 +146,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
             <Link href="/book" style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#ecfeff", border: "1px solid #a5f3fc", borderRadius: "10px", color: "#155e75", textDecoration: "none", fontWeight: 600 }}>Book a Field</Link>
             <Link href={`/bookings?date=${todayValue}`} style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#dbeafe", border: "1px solid #93c5fd", borderRadius: "10px", color: "#1d4ed8", textDecoration: "none", fontWeight: 600 }}>Today's Calendar</Link>
             <Link href="/admin/umpire-schedule" style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#ede9fe", border: "1px solid #c4b5fd", borderRadius: "10px", color: "#6d28d9", textDecoration: "none", fontWeight: 600 }}>Umpire Schedule</Link>
+            <Link href="/admin/rooms" style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#ecfccb", border: "1px solid #bef264", borderRadius: "10px", color: "#3f6212", textDecoration: "none", fontWeight: 600 }}>Manage Fields</Link>
           </div>
         </div>
 
