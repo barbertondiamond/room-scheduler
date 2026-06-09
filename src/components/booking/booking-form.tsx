@@ -1,4 +1,4 @@
-
+//test
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -225,7 +225,7 @@ export default function BookingForm({ rooms }: Props) {
       >
         <div>
           <label htmlFor="name" style={fieldLabelStyle}>
-            Your Name
+            Team Name
           </label>
           <input id="name" value={name} onChange={(e) => setName(e.target.value)} style={fieldStyle} required />
         </div>

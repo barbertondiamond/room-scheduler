@@ -214,7 +214,7 @@ export default function EditBookingForm({ rooms, booking, returnDate, returnView
     <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.25rem" }}>
       <div style={{ display: "grid", gap: "1.25rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
         <div>
-          <label htmlFor="name" style={fieldLabelStyle}>Your Name</label>
+          <label htmlFor="name" style={fieldLabelStyle}>Team Name</label>
           <input id="name" value={name} onChange={(e) => setName(e.target.value)} style={fieldStyle} required />
         </div>
 
