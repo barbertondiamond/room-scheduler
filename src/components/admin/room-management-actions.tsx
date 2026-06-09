@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -37,23 +36,41 @@ const compactFieldStyle = {
 
 export default function RoomManagementActions(props: Props) {
   const router = useRouter();
+
   const [name, setName] = useState(props.mode === "create" ? "" : props.room.name);
-  const [description, setDescription] = useState(props.mode === "create" ? "" : props.room.description || "");
-  const [displayName, setDisplayName] = useState(props.mode === "create" ? "" : props.room.name);
-  const [displayDescription, setDisplayDescription] = useState(props.mode === "create" ? "" : props.room.description || "");
-  const [displayIsActive, setDisplayIsActive] = useState(props.mode === "create" ? true : props.room.isActive);
+  const [description, setDescription] = useState(
+    props.mode === "create" ? "" : props.room.description || ""
+  );
+
+  const [displayName, setDisplayName] = useState(
+    props.mode === "create" ? "" : props.room.name
+  );
+  const [displayDescription, setDisplayDescription] = useState(
+    props.mode === "create" ? "" : props.room.description || ""
+  );
+  const [displayIsActive, setDisplayIsActive] = useState(
+    props.mode === "create" ? true : props.room.isActive
+  );
+
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (props.mode !== "manage") return;
+
     setName(props.room.name);
     setDescription(props.room.description || "");
     setDisplayName(props.room.name);
     setDisplayDescription(props.room.description || "");
     setDisplayIsActive(props.room.isActive);
-  }, [props.mode, props.mode === "manage" ? props.room.id : null, props.mode === "manage" ? props.room.name : null, props.mode === "manage" ? props.room.description : null, props.mode === "manage" ? props.room.isActive : null]);
+  }, [
+    props.mode,
+    props.mode === "manage" ? props.room.id : null,
+    props.mode === "manage" ? props.room.name : null,
+    props.mode === "manage" ? props.room.description : null,
+    props.mode === "manage" ? props.room.isActive : null,
+  ]);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -71,9 +88,14 @@ export default function RoomManagementActions(props: Props) {
       const response = await fetch("/api/admin/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), description: description.trim() }),
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+        }),
       });
+
       const result = await response.json();
+
       if (result.success) {
         setName("");
         setDescription("");
@@ -91,15 +113,19 @@ export default function RoomManagementActions(props: Props) {
 
   async function handleToggleActive() {
     if (props.mode !== "manage") return;
+
     setIsSaving(true);
     setMessage("");
+
     try {
       const response = await fetch(`/api/admin/rooms/${props.room.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !displayIsActive }),
       });
+
       const result = await response.json();
+
       if (result.success) {
         setDisplayIsActive(result.room.isActive);
         router.refresh();
@@ -124,6 +150,7 @@ export default function RoomManagementActions(props: Props) {
 
     setIsSaving(true);
     setMessage("");
+
     try {
       const response = await fetch(`/api/admin/rooms/${props.room.id}`, {
         method: "PATCH",
@@ -133,7 +160,9 @@ export default function RoomManagementActions(props: Props) {
           description: description.trim(),
         }),
       });
+
       const result = await response.json();
+
       if (result.success) {
         setDisplayName(result.room.name);
         setDisplayDescription(result.room.description || "");
@@ -162,16 +191,22 @@ export default function RoomManagementActions(props: Props) {
 
   async function handleDelete() {
     if (props.mode !== "manage") return;
-    const confirmed = window.confirm(`Delete ${displayName}? This permanently removes the field.`);
+
+    const confirmed = window.confirm(
+      `Delete ${displayName}? This permanently removes the field.`
+    );
     if (!confirmed) return;
 
     setIsSaving(true);
     setMessage("");
+
     try {
       const response = await fetch(`/api/admin/rooms/${props.room.id}`, {
         method: "DELETE",
       });
+
       const result = await response.json();
+
       if (result.success) {
         router.refresh();
       } else {
@@ -187,19 +222,68 @@ export default function RoomManagementActions(props: Props) {
 
   if (props.mode === "create") {
     return (
-      <form onSubmit={handleCreate} style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1.4fr auto", alignItems: "end" }}>
+      <form
+        onSubmit={handleCreate}
+        style={{
+          display: "grid",
+          gap: "1rem",
+          gridTemplateColumns: "1fr 1.4fr auto",
+          alignItems: "end",
+        }}
+      >
         <div>
-          <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: 600, color: "#334155" }}>Field Name</label>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.4rem",
+              fontWeight: 600,
+              color: "#334155",
+            }}
+          >
+            Field Name
+          </label>
           <input value={name} onChange={(e) => setName(e.target.value)} style={fieldStyle} />
         </div>
+
         <div>
-          <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: 600, color: "#334155" }}>Description</label>
-          <input value={description} onChange={(e) => setDescription(e.target.value)} style={fieldStyle} />
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.4rem",
+              fontWeight: 600,
+              color: "#334155",
+            }}
+          >
+            Description
+          </label>
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            style={fieldStyle}
+          />
         </div>
-        <button type="submit" disabled={isSaving} style={{ padding: "0.85rem 1.25rem", backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "12px", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+
+        <button
+          type="submit"
+          disabled={isSaving}
+          style={{
+            padding: "0.85rem 1.25rem",
+            backgroundColor: "#2563eb",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: "12px",
+            fontWeight: 700,
+            cursor: isSaving ? "default" : "pointer",
+          }}
+        >
           {isSaving ? "Adding..." : "Add Field"}
         </button>
-        {message && <div style={{ gridColumn: "1 / -1", color: "#991b1b", fontWeight: 600 }}>{message}</div>}
+
+        {message && (
+          <div style={{ gridColumn: "1 / -1", color: "#991b1b", fontWeight: 600 }}>
+            {message}
+          </div>
+        )}
       </form>
     );
   }
@@ -238,7 +322,9 @@ export default function RoomManagementActions(props: Props) {
         }}
       >
         <div>
-          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>Field</div>
+          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>
+            Field
+          </div>
           {!isEditing ? (
             <div style={{ fontWeight: 700, color: "#0f172a" }}>{displayName}</div>
           ) : (
@@ -247,54 +333,139 @@ export default function RoomManagementActions(props: Props) {
         </div>
 
         <div>
-          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>Description</div>
+          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>
+            Description
+          </div>
           {!isEditing ? (
             <div style={{ color: "#475569" }}>{displayDescription.trim() || "—"}</div>
           ) : (
-            <input value={description} onChange={(e) => setDescription(e.target.value)} style={compactFieldStyle} />
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              style={compactFieldStyle}
+            />
           )}
         </div>
 
         <div>
-          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>Status</div>
+          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>
+            Status
+          </div>
           {statusPill}
         </div>
 
         <div>
-          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>Bookings</div>
+          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>
+            Bookings
+          </div>
           <div style={{ color: "#334155", fontWeight: 600 }}>{props.bookingCount}</div>
         </div>
 
         <div>
-          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>Actions</div>
+          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>
+            Actions
+          </div>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             {!isEditing ? (
-              <button type="button" onClick={() => { setMessage(""); setIsEditing(true); }} disabled={isSaving} style={{ padding: "0.5rem 0.8rem", backgroundColor: "#dbeafe", border: "1px solid #93c5fd", borderRadius: "8px", color: "#1d4ed8", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("");
+                  setIsEditing(true);
+                }}
+                disabled={isSaving}
+                style={{
+                  padding: "0.5rem 0.8rem",
+                  backgroundColor: "#dbeafe",
+                  border: "1px solid #93c5fd",
+                  borderRadius: "8px",
+                  color: "#1d4ed8",
+                  fontWeight: 700,
+                  cursor: isSaving ? "default" : "pointer",
+                }}
+              >
                 Edit
               </button>
             ) : (
               <>
-                <button type="button" onClick={handleSaveEdit} disabled={isSaving} style={{ padding: "0.5rem 0.8rem", backgroundColor: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                  style={{
+                    padding: "0.5rem 0.8rem",
+                    backgroundColor: "#dcfce7",
+                    border: "1px solid #86efac",
+                    borderRadius: "8px",
+                    color: "#166534",
+                    fontWeight: 700,
+                    cursor: isSaving ? "default" : "pointer",
+                  }}
+                >
                   {isSaving ? "Saving..." : "Save"}
                 </button>
-                <button type="button" onClick={handleCancelEdit} disabled={isSaving} style={{ padding: "0.5rem 0.8rem", backgroundColor: "#f8fafc", border: "1px solid #dbe3f0", borderRadius: "8px", color: "#475569", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  style={{
+                    padding: "0.5rem 0.8rem",
+                    backgroundColor: "#f8fafc",
+                    border: "1px solid #dbe3f0",
+                    borderRadius: "8px",
+                    color: "#475569",
+                    fontWeight: 700,
+                    cursor: isSaving ? "default" : "pointer",
+                  }}
+                >
                   Cancel
                 </button>
               </>
             )}
 
-            <button type="button" onClick={handleToggleActive} disabled={isSaving} style={{ padding: "0.5rem 0.8rem", backgroundColor: displayIsActive ? "#fef3c7" : "#dcfce7", border: displayIsActive ? "1px solid #fcd34d" : "1px solid #86efac", borderRadius: "8px", color: displayIsActive ? "#92400e" : "#166534", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+            <button
+              type="button"
+              onClick={handleToggleActive}
+              disabled={isSaving}
+              style={{
+                padding: "0.5rem 0.8rem",
+                backgroundColor: displayIsActive ? "#fef3c7" : "#dcfce7",
+                border: displayIsActive ? "1px solid #fcd34d" : "1px solid #86efac",
+                borderRadius: "8px",
+                color: displayIsActive ? "#92400e" : "#166534",
+                fontWeight: 700,
+                cursor: isSaving ? "default" : "pointer",
+              }}
+            >
               {displayIsActive ? "Deactivate" : "Activate"}
             </button>
 
-            <button type="button" onClick={handleDelete} disabled={isSaving} style={{ padding: "0.5rem 0.8rem", backgroundColor: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isSaving}
+              style={{
+                padding: "0.5rem 0.8rem",
+                backgroundColor: "#fee2e2",
+                border: "1px solid #fca5a5",
+                borderRadius: "8px",
+                color: "#991b1b",
+                fontWeight: 700,
+                cursor: isSaving ? "default" : "pointer",
+              }}
+            >
               Delete
             </button>
           </div>
         </div>
       </div>
 
-      {message && <div style={{ marginTop: "0.75rem", color: "#991b1b", fontWeight: 600, fontSize: "0.85rem" }}>{message}</div>}
+      {message && (
+        <div style={{ marginTop: "0.75rem", color: "#991b1b", fontWeight: 600, fontSize: "0.85rem" }}>
+          {message}
+        </div>
+      )}
     </div>
   );
 }
