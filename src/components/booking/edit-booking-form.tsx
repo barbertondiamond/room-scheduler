@@ -280,10 +280,7 @@ export default function EditBookingForm({ rooms, booking, returnDate, returnView
           </div>
         )}
 
-        <div>
-          <label htmlFor="umpire" style={fieldLabelStyle}>Umpire</label>
-          <input id="umpire" value={umpire} onChange={(e) => setUmpire(e.target.value)} style={fieldStyle} />
-        </div>
+
       </div>
 
       <div>
