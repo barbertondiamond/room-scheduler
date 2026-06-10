@@ -61,7 +61,6 @@ export default async function EditBookingPage({ params, searchParams }: PageProp
               notes: booking.notes,
               teamGroup: booking.teamGroup,
               opponent: booking.opponent,
-              umpire: booking.umpire,
             }}
             returnDate={returnDate}
             returnView={returnView}
