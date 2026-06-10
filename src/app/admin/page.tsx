@@ -138,7 +138,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
         <div style={{ backgroundColor: "#ffffff", border: "1px solid #dbe3f0", borderRadius: "16px", padding: "1.5rem", marginBottom: "1.5rem", boxShadow: "0 6px 18px rgba(0, 0, 0, 0.06)" }}>
           <h1 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Admin Dashboard</h1>
           <p style={{ marginTop: 0, color: "#4b5563", marginBottom: "1rem" }}>
-            Quick access to field bookings, today's schedule, and recent booking changes.
+            Quick access to field bookings, blackout controls, umpire scheduling, and recent booking changes.
           </p>
 
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
@@ -147,6 +147,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
             <Link href={`/bookings?date=${todayValue}`} style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#dbeafe", border: "1px solid #93c5fd", borderRadius: "10px", color: "#1d4ed8", textDecoration: "none", fontWeight: 600 }}>Today's Calendar</Link>
             <Link href="/admin/umpire-schedule" style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#ede9fe", border: "1px solid #c4b5fd", borderRadius: "10px", color: "#6d28d9", textDecoration: "none", fontWeight: 600 }}>Umpire Schedule</Link>
             <Link href="/admin/rooms" style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#ecfccb", border: "1px solid #bef264", borderRadius: "10px", color: "#3f6212", textDecoration: "none", fontWeight: 600 }}>Manage Fields</Link>
+            <Link href="/admin/blackouts" style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "10px", color: "#991b1b", textDecoration: "none", fontWeight: 600 }}>Field Blackouts</Link>
           </div>
         </div>
 

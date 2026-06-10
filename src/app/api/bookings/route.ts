@@ -20,12 +20,32 @@ export async function POST(request: Request) {
       );
     }
 
-    const startTimeMinutes = timeToMinutes(startTime);
-    const endTimeMinutes = startTimeMinutes + Number(durationBlocks) * 30;
-
     const bookingDate = new Date(`${date}T00:00:00`);
     const nextDay = new Date(bookingDate);
     nextDay.setDate(nextDay.getDate() + 1);
+
+    const blackout = await prisma.roomBlackout.findFirst({
+      where: {
+        roomId,
+        startDateTime: { lt: nextDay },
+        endDateTime: { gt: bookingDate },
+      },
+    });
+
+    if (blackout) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: blackout.reason?.trim()
+            ? `That field is unavailable on that date: ${blackout.reason}.`
+            : "That field is blacked out and unavailable on that date.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const startTimeMinutes = timeToMinutes(startTime);
+    const endTimeMinutes = startTimeMinutes + Number(durationBlocks) * 30;
 
     const existingBooking = await prisma.booking.findFirst({
       where: {

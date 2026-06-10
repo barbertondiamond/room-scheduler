@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -58,6 +59,26 @@ export async function PATCH(
     const nextDay = new Date(bookingDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
+    const blackout = await prisma.roomBlackout.findFirst({
+      where: {
+        roomId,
+        startDateTime: { lt: nextDay },
+        endDateTime: { gt: bookingDate },
+      },
+    });
+
+    if (blackout) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: blackout.reason?.trim()
+            ? `That field is unavailable on that date: ${blackout.reason}.`
+            : "That field is blacked out and unavailable on that date.",
+        },
+        { status: 409 }
+      );
+    }
+
     const existingBooking = await prisma.booking.findFirst({
       where: {
         id: { not: id },
@@ -103,8 +124,6 @@ export async function PATCH(
       opponent: opponent || null,
     };
 
-    // Only update umpire if the caller explicitly sent it.
-    // This preserves the existing umpire when editing from the normal booking edit screen.
     if (typeof umpire === "string") {
       updateData.umpire = umpire.trim() || null;
     }
@@ -170,11 +189,7 @@ export async function PATCH(
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Booking updated successfully.",
-      booking,
-    });
+    return NextResponse.json({ success: true, message: "Booking updated successfully.", booking });
   } catch (error) {
     console.error("Error updating booking:", error);
     return NextResponse.json(
@@ -250,10 +265,7 @@ export async function DELETE(
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Booking deleted successfully.",
-    });
+    return NextResponse.json({ success: true, message: "Booking deleted successfully." });
   } catch (error) {
     console.error("Error deleting booking:", error);
     return NextResponse.json(
