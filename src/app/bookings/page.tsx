@@ -68,6 +68,21 @@ function buildWeekDays(dateString: string) {
   });
 }
 
+function addDaysToDate(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function toDateKey(date: Date) {
+  return toDateInputValue(date);
+}
+
+function formatBlackoutLabel(reason: string | null | undefined) {
+  const trimmed = reason?.trim();
+  return trimmed ? `BLACKED OUT · ${trimmed}` : "BLACKED OUT";
+}
+
 function bookingBlockColors(title: string | null) {
   if (title === "Game" || title === "Tournament") {
     return { backgroundColor: "#ede9fe", borderColor: "#a78bfa" };
@@ -105,22 +120,31 @@ export default async function BookingsPage({ searchParams }: PageProps) {
   const nextWeekDate = addDays(selectedDate, 7);
   const todayDate = toDateInputValue(new Date());
 
-  const rooms = await prisma.room.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-  });
-
-  const bookings = await prisma.booking.findMany({
-    where: {
-      status: "ACTIVE",
-      bookingDate:
+  const [rooms, bookings, roomBlackouts] = await Promise.all([
+    prisma.room.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.booking.findMany({
+      where: {
+        status: "ACTIVE",
+        bookingDate:
+          view === "week"
+            ? { gte: weekStart, lt: weekEnd }
+            : { gte: dayStart, lt: nextDay },
+      },
+      include: { room: true },
+      orderBy: [{ bookingDate: "asc" }, { roomId: "asc" }, { startTimeMinutes: "asc" }],
+    }),
+    prisma.roomBlackout.findMany({
+      where:
         view === "week"
-          ? { gte: weekStart, lt: weekEnd }
-          : { gte: dayStart, lt: nextDay },
-    },
-    include: { room: true },
-    orderBy: [{ bookingDate: "asc" }, { roomId: "asc" }, { startTimeMinutes: "asc" }],
-  });
+          ? { startDateTime: { lt: weekEnd }, endDateTime: { gt: weekStart } }
+          : { startDateTime: { lt: nextDay }, endDateTime: { gt: dayStart } },
+      include: { room: true },
+      orderBy: [{ startDateTime: "asc" }, { roomId: "asc" }],
+    }),
+  ]);
 
   const slots: number[] = [];
   for (let minutes = START_HOUR * 60; minutes < END_HOUR * 60; minutes += SLOT_MINUTES) {
@@ -128,6 +152,29 @@ export default async function BookingsPage({ searchParams }: PageProps) {
   }
 
   const totalHeight = slots.length * SLOT_HEIGHT;
+
+  const blackoutMap = new Map<string, { label: string }>();
+  for (const blackout of roomBlackouts) {
+    let cursor = fromDateInputValue(toDateInputValue(blackout.startDateTime));
+    const blackoutEnd = fromDateInputValue(toDateInputValue(blackout.endDateTime));
+
+    while (cursor < blackoutEnd) {
+      blackoutMap.set(`${blackout.roomId}|${toDateKey(cursor)}`, {
+        label: formatBlackoutLabel(blackout.reason),
+      });
+      cursor = addDaysToDate(cursor, 1);
+    }
+  }
+
+  const blackoutCellStyle = {
+    backgroundColor: "#374151",
+    color: "#ffffff",
+    border: "1px solid #1f2937",
+    borderRadius: "10px",
+    padding: "0.65rem 0.75rem",
+    fontWeight: 700,
+    textAlign: "center" as const,
+  };
 
   return (
     <main
@@ -202,6 +249,11 @@ export default async function BookingsPage({ searchParams }: PageProps) {
           </div>
         </div>
 
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "1rem" }}>
+          <div style={{ width: "18px", height: "18px", borderRadius: "4px", backgroundColor: "#374151", border: "1px solid #1f2937" }} />
+          <div style={{ color: "#475569", fontWeight: 600 }}>Blackout date</div>
+        </div>
+
         {view === "day" ? (
           <div style={{ backgroundColor: "#ffffff", border: "1px solid #dbe3f0", borderRadius: "16px", padding: "1rem", boxShadow: "0 6px 18px rgba(0, 0, 0, 0.06)", overflowX: "auto" }}>
             <div style={{ display: "flex", gap: "1rem", minWidth: "1200px" }}>
@@ -218,6 +270,7 @@ export default async function BookingsPage({ searchParams }: PageProps) {
 
               {rooms.map((room) => {
                 const roomBookings = bookings.filter((booking) => booking.roomId === room.id);
+                const roomBlackout = blackoutMap.get(`${room.id}|${selectedDate}`);
                 return (
                   <div key={room.id} style={{ minWidth: "220px", flex: 1 }}>
                     <div style={{ height: "60px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "1px solid #dbe3f0", backgroundColor: "#f8fafc", borderRadius: "12px 12px 0 0", padding: "0.35rem 0.5rem", textAlign: "center" }}>
@@ -225,12 +278,18 @@ export default async function BookingsPage({ searchParams }: PageProps) {
                       {room.description && <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "0.15rem" }}>{room.description}</div>}
                     </div>
 
-                    <div style={{ position: "relative", height: `${totalHeight}px`, border: "1px solid #dbe3f0", borderTop: "none", backgroundColor: "#ffffff", borderRadius: "0 0 12px 12px" }}>
-                      {slots.map((slot, index) => (
-                        <div key={slot} style={{ position: "absolute", top: `${index * SLOT_HEIGHT}px`, left: 0, right: 0, borderTop: "1px solid #eef2f7", height: `${SLOT_HEIGHT}px` }} />
-                      ))}
+                    <div style={{ position: "relative", height: `${totalHeight}px`, border: "1px solid #dbe3f0", borderTop: "none", backgroundColor: roomBlackout ? "#374151" : "#ffffff", borderRadius: "0 0 12px 12px" }}>
+                      {roomBlackout ? (
+                        <div style={{ position: "absolute", inset: "0", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", textAlign: "center", color: "#ffffff", fontWeight: 800, lineHeight: 1.4 }}>
+                          {roomBlackout.label}
+                        </div>
+                      ) : (
+                        <>
+                          {slots.map((slot, index) => (
+                            <div key={slot} style={{ position: "absolute", top: `${index * SLOT_HEIGHT}px`, left: 0, right: 0, borderTop: "1px solid #eef2f7", height: `${SLOT_HEIGHT}px` }} />
+                          ))}
 
-                      {roomBookings.map((booking) => {
+                          {roomBookings.map((booking) => {
                         const top = ((booking.startTimeMinutes - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT;
                         const height = booking.durationBlocks * SLOT_HEIGHT - 4;
                         const showNotes = booking.durationBlocks >= 4 && Boolean(booking.notes);
@@ -245,7 +304,9 @@ export default async function BookingsPage({ searchParams }: PageProps) {
                             {showNotes && <div style={{ color: "#475569", marginTop: "0.3rem", fontSize: "0.78rem", lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{booking.notes}</div>}
                           </Link>
                         );
-                      })}
+                          })}
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -272,10 +333,15 @@ export default async function BookingsPage({ searchParams }: PageProps) {
 
                     {weekDays.map((day) => {
                       const cellBookings = bookings.filter((booking) => booking.roomId === room.id && toDateInputValue(new Date(booking.bookingDate)) === day.value);
+                      const cellBlackout = blackoutMap.get(`${room.id}|${day.value}`);
 
                       return (
-                        <div key={day.value} style={{ backgroundColor: "#ffffff", border: "1px solid #dbe3f0", borderRadius: "12px", padding: "0.55rem", minHeight: "88px" }}>
-                          {cellBookings.length === 0 ? (
+                        <div key={day.value} style={{ backgroundColor: cellBlackout ? "#374151" : "#ffffff", border: cellBlackout ? "1px solid #1f2937" : "1px solid #dbe3f0", borderRadius: "12px", padding: "0.55rem", minHeight: "88px" }}>
+                          {cellBlackout ? (
+                            <div style={{ ...blackoutCellStyle, minHeight: "76px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              {cellBlackout.label}
+                            </div>
+                          ) : cellBookings.length === 0 ? (
                             <div style={{ color: "#cbd5e1", fontSize: "0.88rem", textAlign: "center", paddingTop: "0.65rem" }}>—</div>
                           ) : (
                             <div style={{ display: "grid", gap: "0.45rem" }}>

@@ -51,12 +51,15 @@ model Booking {
   updatedByUserId  String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+  umpireId       String?
+  umpireRecord   Umpire?   @relation(fields: [umpireId], references: [id], onDelete: SetNull)
   createdBy        AdminUser?    @relation("CreatedBookings", fields: [createdByUserId], references: [id])
   room             Room          @relation(fields: [roomId], references: [id])
   updatedBy        AdminUser?    @relation("UpdatedBookings", fields: [updatedByUserId], references: [id])
 
   @@index([roomId, bookingDate])
   @@index([bookingDate])
+  @@index([umpireId])
 }
 
 model RoomBlackout {
@@ -84,6 +87,23 @@ model AuditLog {
   performedBy       AdminUser? @relation(fields: [performedByUserId], references: [id])
 
   @@index([entityType, entityId])
+}
+
+model Umpire {
+  id            String    @id @default(cuid())
+  name          String
+  phone         String?
+  email         String?
+  notes         String?
+  doesBaseball  Boolean   @default(true)
+  doesSoftball  Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bookings      Booking[]
+
+  @@index([isActive])
+  @@index([name])
 }
 
 enum BookingStatus {
