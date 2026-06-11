@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import DeleteBookingButton from "@/components/booking/delete-booking-button";
+import DeleteBookingButton from "@/components/DeleteBookingButton";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -20,9 +20,9 @@ function toDateInputValue(date: Date) {
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", {
     weekday: "long",
-    year: "numeric",
     month: "long",
     day: "numeric",
+    year: "numeric",
   });
 }
 
@@ -35,28 +35,46 @@ function formatTimeLabel(totalMinutes: number) {
   return `${hours12}:${pad(minutes)} ${suffix}`;
 }
 
-function asText(value: string | null | undefined) {
-  return value && value.trim() ? value : "—";
+function detailRow(label: string, value: string | null | undefined) {
+  return {
+    label,
+    value: value && value.trim() ? value : "—",
+  };
 }
 
 export default async function BookingDetailsPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const query = await searchParams;
-  const returnDate = query.date || toDateInputValue(new Date());
-  const returnView = query.view === "week" ? "week" : "day";
+  const search = await searchParams;
 
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { room: true },
+    include: {
+      room: true,
+      umpireRecord: true,
+    },
   });
 
   if (!booking) {
     notFound();
   }
 
-  const calendarHref = `/bookings?date=${returnDate}&view=${returnView}`;
-  const editHref = `/bookings/${booking.id}/edit?date=${returnDate}&view=${returnView}`;
-  const adminHref = "/admin";
+  const view = search.view === "week" ? "week" : "day";
+  const calendarDate = search.date || toDateInputValue(new Date(booking.bookingDate));
+  const calendarHref = `/bookings?date=${calendarDate}&view=${view}`;
+  const editHref = `/bookings/${booking.id}/edit?date=${calendarDate}&view=${view}`;
+
+  const rows = [
+    detailRow("Purpose", booking.title),
+    detailRow("Booked By", booking.bookedByName),
+    detailRow("Email", booking.bookedByEmail),
+    detailRow("Field", booking.room?.name),
+    detailRow("Date", formatDate(new Date(booking.bookingDate))),
+    detailRow("Time", `${formatTimeLabel(booking.startTimeMinutes)} - ${formatTimeLabel(booking.endTimeMinutes)}`),
+    detailRow("Group", booking.teamGroup),
+    detailRow("Opponent", booking.opponent),
+    detailRow("Assigned Umpire", booking.umpireRecord?.name || null),
+    detailRow("Notes", booking.notes),
+  ];
 
   return (
     <main
@@ -77,59 +95,87 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
             boxShadow: "0 6px 18px rgba(0, 0, 0, 0.06)",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "1rem",
+              flexWrap: "wrap",
+              marginBottom: "1rem",
+            }}
+          >
             <div>
-              <h1 style={{ marginTop: 0, marginBottom: "0.45rem" }}>{booking.title || "Booking Details"}</h1>
-              <div style={{ color: "#64748b" }}>{formatDate(booking.bookingDate)}</div>
+              <h1 style={{ marginTop: 0, marginBottom: "0.35rem" }}>Booking Details</h1>
+              <div style={{ color: "#64748b" }}>Review booking information and admin actions.</div>
             </div>
 
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-start" }}>
-              <Link href={calendarHref} style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#eef2ff", border: "1px solid #c7d2fe", borderRadius: "10px", color: "#1e3a8a", textDecoration: "none", fontWeight: 600 }}>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "start" }}>
+              <Link
+                href={calendarHref}
+                style={{
+                  display: "inline-block",
+                  padding: "0.65rem 1rem",
+                  backgroundColor: "#eef2ff",
+                  border: "1px solid #c7d2fe",
+                  borderRadius: "10px",
+                  color: "#1e3a8a",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                }}
+              >
                 Back to Calendar
               </Link>
-              <Link href={editHref} style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#dbeafe", border: "1px solid #93c5fd", borderRadius: "10px", color: "#1d4ed8", textDecoration: "none", fontWeight: 600 }}>
+              <Link
+                href={editHref}
+                style={{
+                  display: "inline-block",
+                  padding: "0.65rem 1rem",
+                  backgroundColor: "#dbeafe",
+                  border: "1px solid #93c5fd",
+                  borderRadius: "10px",
+                  color: "#1d4ed8",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                }}
+              >
                 Edit Booking
               </Link>
-              <Link href={adminHref} style={{ display: "inline-block", padding: "0.65rem 1rem", backgroundColor: "#ede9fe", border: "1px solid #c4b5fd", borderRadius: "10px", color: "#6d28d9", textDecoration: "none", fontWeight: 600 }}>
+              <Link
+                href="/admin"
+                style={{
+                  display: "inline-block",
+                  padding: "0.65rem 1rem",
+                  backgroundColor: "#f8fafc",
+                  border: "1px solid #dbe3f0",
+                  borderRadius: "10px",
+                  color: "#475569",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                }}
+              >
                 Admin
               </Link>
               <DeleteBookingButton bookingId={booking.id} backHref={calendarHref} />
             </div>
           </div>
 
-          <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-            <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Field</div>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>{booking.room.name}</div>
-              <div style={{ color: "#64748b", marginTop: "0.25rem" }}>{asText(booking.room.description)}</div>
-            </div>
-
-            <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Time</div>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>
-                {formatTimeLabel(booking.startTimeMinutes)} - {formatTimeLabel(booking.endTimeMinutes)}
+          <div style={{ display: "grid", gap: "0.85rem" }}>
+            {rows.map((row) => (
+              <div
+                key={row.label}
+                style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  backgroundColor: "#f8fafc",
+                  padding: "0.9rem 1rem",
+                }}
+              >
+                <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.2rem" }}>
+                  {row.label}
+                </div>
+                <div style={{ color: "#0f172a", fontWeight: 700 }}>{row.value}</div>
               </div>
-            </div>
-
-            <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Booked By</div>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>{booking.bookedByName}</div>
-              <div style={{ color: "#64748b", marginTop: "0.25rem" }}>{asText(booking.bookedByEmail)}</div>
-            </div>
-
-            <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Group</div>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>{asText(booking.teamGroup)}</div>
-            </div>
-
-            <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Opponent</div>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>{asText(booking.opponent)}</div>
-            </div>
-
-          <div style={{ marginTop: "1rem", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
-            <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Notes</div>
-            <div style={{ color: "#334155", lineHeight: 1.6 }}>{asText(booking.notes)}</div>
+            ))}
           </div>
         </div>
       </div>

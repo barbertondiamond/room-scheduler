@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -73,3 +74,198 @@ export async function PATCH(
         {
           success: false,
           message: blackout.reason?.trim()
+            ? `That field is unavailable on that date: ${blackout.reason}.`
+            : "That field is blacked out and unavailable on that date.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const existingBooking = await prisma.booking.findFirst({
+      where: {
+        id: { not: id },
+        roomId,
+        status: "ACTIVE",
+        bookingDate: { gte: bookingDate, lt: nextDay },
+        startTimeMinutes: { lt: endTimeMinutes },
+        endTimeMinutes: { gt: startTimeMinutes },
+      },
+    });
+
+    if (existingBooking) {
+      return NextResponse.json(
+        { success: false, message: "That field is already booked for that time." },
+        { status: 409 }
+      );
+    }
+
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: {
+        roomId,
+        bookingDate,
+        startTimeMinutes,
+        endTimeMinutes,
+        durationBlocks: Number(durationBlocks),
+        bookedByName: name,
+        bookedByEmail: email || null,
+        title: title || null,
+        notes: notes || null,
+        teamGroup,
+        opponent: opponent || null,
+      },
+      include: {
+        room: true,
+        umpireRecord: true,
+      },
+    });
+
+    const prismaWithAudit = prisma as typeof prisma & {
+      auditLog?: {
+        create: (args: {
+          data: {
+            entityType: string;
+            entityId: string;
+            action: string;
+            detailsJson: Record<string, unknown>;
+          };
+        }) => Promise<unknown>;
+      };
+    };
+
+    if (prismaWithAudit.auditLog) {
+      await prismaWithAudit.auditLog.create({
+        data: {
+          entityType: "Booking",
+          entityId: booking.id,
+          action: "UPDATE",
+          detailsJson: {
+            before: {
+              bookedByName: existingRecord.bookedByName,
+              bookedByEmail: existingRecord.bookedByEmail,
+              roomId: existingRecord.roomId,
+              roomName: existingRecord.room?.name || null,
+              bookingDate: existingRecord.bookingDate.toISOString(),
+              startTimeMinutes: existingRecord.startTimeMinutes,
+              endTimeMinutes: existingRecord.endTimeMinutes,
+              durationBlocks: existingRecord.durationBlocks,
+              title: existingRecord.title,
+              notes: existingRecord.notes,
+              teamGroup: existingRecord.teamGroup ?? null,
+              opponent: existingRecord.opponent ?? null,
+              umpireId: existingRecord.umpireId ?? null,
+              umpireName: existingRecord.umpireRecord?.name ?? null,
+            },
+            after: {
+              bookedByName: booking.bookedByName,
+              bookedByEmail: booking.bookedByEmail,
+              roomId: booking.roomId,
+              roomName: booking.room?.name || null,
+              bookingDate: booking.bookingDate.toISOString(),
+              startTimeMinutes: booking.startTimeMinutes,
+              endTimeMinutes: booking.endTimeMinutes,
+              durationBlocks: booking.durationBlocks,
+              title: booking.title,
+              notes: booking.notes,
+              teamGroup: booking.teamGroup ?? null,
+              opponent: booking.opponent ?? null,
+              umpireId: booking.umpireId ?? null,
+              umpireName: booking.umpireRecord?.name ?? null,
+            },
+          },
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true, message: "Booking updated successfully.", booking });
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to update booking." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+
+    const existingRecord = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        room: true,
+        umpireRecord: true,
+      },
+    });
+
+    if (!existingRecord) {
+      return NextResponse.json(
+        { success: false, message: "Booking not found." },
+        { status: 404 }
+      );
+    }
+
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: { status: "CANCELED" },
+      include: {
+        room: true,
+        umpireRecord: true,
+      },
+    });
+
+    const prismaWithAudit = prisma as typeof prisma & {
+      auditLog?: {
+        create: (args: {
+          data: {
+            entityType: string;
+            entityId: string;
+            action: string;
+            detailsJson: Record<string, unknown>;
+          };
+        }) => Promise<unknown>;
+      };
+    };
+
+    if (prismaWithAudit.auditLog) {
+      await prismaWithAudit.auditLog.create({
+        data: {
+          entityType: "Booking",
+          entityId: booking.id,
+          action: "DELETE",
+          detailsJson: {
+            deleted: {
+              bookedByName: booking.bookedByName,
+              bookedByEmail: booking.bookedByEmail,
+              roomId: booking.roomId,
+              roomName: booking.room?.name || null,
+              bookingDate: booking.bookingDate.toISOString(),
+              startTimeMinutes: booking.startTimeMinutes,
+              endTimeMinutes: booking.endTimeMinutes,
+              durationBlocks: booking.durationBlocks,
+              title: booking.title,
+              notes: booking.notes,
+              status: booking.status,
+              teamGroup: booking.teamGroup ?? null,
+              opponent: booking.opponent ?? null,
+              umpireId: booking.umpireId ?? null,
+              umpireName: booking.umpireRecord?.name ?? null,
+            },
+          },
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true, message: "Booking deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting booking:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to delete booking." },
+      { status: 500 }
+    );
+  }
+}
