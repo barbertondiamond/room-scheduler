@@ -29,6 +29,7 @@ export async function PATCH(
       durationBlocks,
       title,
       opponent,
+      umpire,
       notes,
     } = body;
 
@@ -108,6 +109,7 @@ export async function PATCH(
       notes: string | null;
       teamGroup: string;
       opponent: string | null;
+      umpire?: string | null;
     } = {
       roomId,
       bookingDate,
@@ -121,6 +123,10 @@ export async function PATCH(
       teamGroup,
       opponent: opponent || null,
     };
+
+    if (typeof umpire === "string") {
+      updateData.umpire = umpire.trim() || null;
+    }
 
     const booking = await prisma.booking.update({
       where: { id },
@@ -161,6 +167,7 @@ export async function PATCH(
               notes: existingRecord.notes,
               teamGroup: existingRecord.teamGroup ?? null,
               opponent: existingRecord.opponent ?? null,
+              umpire: existingRecord.umpire ?? null,
             },
             after: {
               bookedByName: booking.bookedByName,
