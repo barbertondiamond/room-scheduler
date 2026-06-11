@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import DeleteBookingButton from "@/components/delete-booking-button";
+import DeleteBookingButton from "@/components/booking/delete-booking-button";
 
 type PageProps = {
   params: Promise<{ id: string }>;
