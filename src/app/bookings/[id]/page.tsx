@@ -127,12 +127,6 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
               <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>{asText(booking.opponent)}</div>
             </div>
 
-            <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Umpire</div>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>{asText(booking.umpire)}</div>
-            </div>
-          </div>
-
           <div style={{ marginTop: "1rem", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1rem" }}>
             <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748b", marginBottom: "0.35rem" }}>Notes</div>
             <div style={{ color: "#334155", lineHeight: 1.6 }}>{asText(booking.notes)}</div>
