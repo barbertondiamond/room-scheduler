@@ -185,12 +185,20 @@ export default async function UmpireSchedulePage({ searchParams }: PageProps) {
                 return (
                   <div key={booking.id} style={{ border: "1px solid #e2e8f0", borderRadius: "14px", padding: "1rem", backgroundColor: "#ffffff" }}>
                     <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(320px, 420px)", alignItems: "start" }}>
-                      <div>
-                        <div style={{ fontWeight: 800, color: "#0f172a" }}>{booking.title || "Game"}</div>
-                        <div style={{ color: "#334155", marginTop: "0.2rem" }}>{booking.teamGroup || "—"}</div>
-                        <div style={{ color: "#64748b", marginTop: "0.2rem", fontSize: "0.92rem" }}>{formatDate(booking.bookingDate)} · {formatTimeLabel(booking.startTimeMinutes)} - {formatTimeLabel(booking.endTimeMinutes)}</div>
-                      </div>
-
+				  <div>
+				    <div style={{ fontWeight: 800, color: "#0f172a" }}>
+					  {booking.title || "Game"}
+				    </div>
+				    <div style={{ color: "#334155", marginTop: "0.2rem", fontWeight: 600 }}>
+					  {booking.bookedByName || "—"}
+				    </div>
+  				    <div style={{ color: "#334155", marginTop: "0.2rem" }}>
+					  {booking.teamGroup || "—"}
+				    </div>
+				    <div style={{ color: "#64748b", marginTop: "0.2rem", fontSize: "0.92rem" }}>
+					  {formatDate(booking.bookingDate)} · {formatTimeLabel(booking.startTimeMinutes)} - {formatTimeLabel(booking.endTimeMinutes)}
+				    </div>
+				  </div>
                       <div>
                         <div style={{ color: "#334155", fontWeight: 700 }}>{booking.room.name}</div>
                         <div style={{ color: "#64748b", marginTop: "0.2rem" }}>Opponent: {booking.opponent?.trim() || "—"}</div>
