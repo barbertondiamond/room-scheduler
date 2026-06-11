@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -11,26 +10,30 @@ function dayBounds(dateText: string) {
 
 export async function POST(request: Request) {
   try {
-const body = await request.json();
+    const body = await request.json();
 
-const roomIds: string[] = Array.isArray(body.roomIds)
-  ? body.roomIds.filter(
-      (item: unknown): item is string =>
-        typeof item === "string" && item.trim().length > 0
-    )
-  : [];
+    const roomIds: string[] = Array.isArray(body.roomIds)
+      ? body.roomIds.filter(
+          (item: unknown): item is string =>
+            typeof item === "string" && item.trim().length > 0
+        )
+      : [];
 
-const date = typeof body.date === "string" ? body.date : "";
-const reason = typeof body.reason === "string" ? body.reason.trim() : "";
     const date = typeof body.date === "string" ? body.date : "";
     const reason = typeof body.reason === "string" ? body.reason.trim() : "";
 
     if (!date) {
-      return NextResponse.json({ success: false, message: "A blackout date is required." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "A blackout date is required." },
+        { status: 400 }
+      );
     }
 
     if (roomIds.length === 0) {
-      return NextResponse.json({ success: false, message: "Choose at least one field to black out." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Choose at least one field to black out." },
+        { status: 400 }
+      );
     }
 
     const { start, end } = dayBounds(date);
@@ -49,11 +52,16 @@ const reason = typeof body.reason === "string" ? body.reason.trim() : "";
     });
 
     if (conflictingBookings.length > 0) {
-      const roomNames = Array.from(new Set(conflictingBookings.map((item) => item.room.name)));
+      const roomNames = Array.from(
+        new Set(conflictingBookings.map((item) => item.room.name))
+      );
+
       return NextResponse.json(
         {
           success: false,
-          message: `Cannot create blackout because bookings already exist for: ${roomNames.join(", ")}.`,
+          message: `Cannot create blackout because bookings already exist for: ${roomNames.join(
+            ", "
+          )}.`,
         },
         { status: 409 }
       );
@@ -69,7 +77,10 @@ const reason = typeof body.reason === "string" ? body.reason.trim() : "";
     });
 
     if (existingBlackouts.length > 0) {
-      const roomNames = Array.from(new Set(existingBlackouts.map((item) => item.room.name)));
+      const roomNames = Array.from(
+        new Set(existingBlackouts.map((item) => item.room.name))
+      );
+
       return NextResponse.json(
         {
           success: false,
@@ -91,6 +102,10 @@ const reason = typeof body.reason === "string" ? body.reason.trim() : "";
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error creating room blackout:", error);
-    return NextResponse.json({ success: false, message: "Failed to create blackout." }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Failed to create blackout." },
+      { status: 500 }
+    );
   }
 }
+``
