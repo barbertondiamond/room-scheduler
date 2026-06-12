@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
@@ -17,6 +16,7 @@ type Props = {
   currentUmpireName: string | null;
   sport: "baseball" | "softball";
   umpires: UmpireOption[];
+  hideClearButton?: boolean;
 };
 
 const selectStyle = {
@@ -35,6 +35,7 @@ export default function UmpireAssignmentActions({
   currentUmpireName,
   sport,
   umpires,
+  hideClearButton = false,
 }: Props) {
   const router = useRouter();
   const [selectedUmpireId, setSelectedUmpireId] = useState(currentUmpireId || "");
@@ -102,70 +103,71 @@ export default function UmpireAssignmentActions({
     }
   }
 
-return (
-  <div style={{ display: "grid", gap: "0.6rem" }}>
-    <select
-      value={selectedUmpireId}
-      onChange={(e) => setSelectedUmpireId(e.target.value)}
-      style={selectStyle}
-      disabled={isSaving}
-    >
-      <option value="">Select active umpire…</option>
-      {filteredUmpires.map((umpire) => (
-        <option key={umpire.id} value={umpire.id}>
-          {umpire.name}
-        </option>
-      ))}
-    </select>
-
-    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-      <button
-        type="button"
-        onClick={handleAssign}
+  return (
+    <div style={{ display: "grid", gap: "0.6rem" }}>
+      <select
+        value={selectedUmpireId}
+        onChange={(e) => setSelectedUmpireId(e.target.value)}
+        style={selectStyle}
         disabled={isSaving}
-        style={{
-          padding: "0.55rem 0.8rem",
-          backgroundColor: "#dbeafe",
-          border: "1px solid #93c5fd",
-          borderRadius: "8px",
-          color: "#1d4ed8",
-          fontWeight: 700,
-          cursor: isSaving ? "default" : "pointer",
-        }}
       >
-        {isSaving ? "Saving..." : "Set Umpire"}
-      </button>
+        <option value="">Select active umpire…</option>
+        {filteredUmpires.map((umpire) => (
+          <option key={umpire.id} value={umpire.id}>
+            {umpire.name}
+          </option>
+        ))}
+      </select>
 
-      <button
-        type="button"
-        onClick={handleClear}
-        disabled={isSaving || !currentUmpireName}
-        style={{
-          padding: "0.55rem 0.8rem",
-          backgroundColor: "#fee2e2",
-          border: "1px solid #fca5a5",
-          borderRadius: "8px",
-          color: "#991b1b",
-          fontWeight: 700,
-          cursor: isSaving || !currentUmpireName ? "default" : "pointer",
-        }}
-      >
-        Clear Umpire
-      </button>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={handleAssign}
+          disabled={isSaving}
+          style={{
+            padding: "0.55rem 0.8rem",
+            backgroundColor: "#dbeafe",
+            border: "1px solid #93c5fd",
+            borderRadius: "8px",
+            color: "#1d4ed8",
+            fontWeight: 700,
+            cursor: isSaving ? "default" : "pointer",
+          }}
+        >
+          {isSaving ? "Saving..." : "Set Umpire"}
+        </button>
+
+        {!hideClearButton && (
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={isSaving || !currentUmpireName}
+            style={{
+              padding: "0.55rem 0.8rem",
+              backgroundColor: "#fee2e2",
+              border: "1px solid #fca5a5",
+              borderRadius: "8px",
+              color: "#991b1b",
+              fontWeight: 700,
+              cursor: isSaving || !currentUmpireName ? "default" : "pointer",
+            }}
+          >
+            Clear Umpire
+          </button>
+        )}
+      </div>
+
+      {filteredUmpires.length === 0 && (
+        <div style={{ color: "#92400e", fontWeight: 600, fontSize: "0.85rem" }}>
+          No active {sport === "softball" ? "softball" : "baseball"} umpires are available in the master list.
+        </div>
+      )}
+
+      {message && (
+        <div style={{ color: "#991b1b", fontWeight: 600, fontSize: "0.85rem" }}>
+          {message}
+        </div>
+      )}
     </div>
-
-    {filteredUmpires.length === 0 && (
-      <div style={{ color: "#92400e", fontWeight: 600, fontSize: "0.85rem" }}>
-        No active {sport === "softball" ? "softball" : "baseball"} umpires are available in the master list.
-      </div>
-    )}
-
-    {message && (
-      <div style={{ color: "#991b1b", fontWeight: 600, fontSize: "0.85rem" }}>
-        {message}
-      </div>
-    )}
-  </div>
-);
-
+  );
 }

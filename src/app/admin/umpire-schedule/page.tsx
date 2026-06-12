@@ -24,10 +24,10 @@ function fromDateInputValue(dateString: string) {
   return new Date(`${dateString}T00:00:00`);
 }
 
-function formatDate(date: Date) {
+function formatDayHeading(date: Date) {
   return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
+    weekday: "long",
+    month: "long",
     day: "numeric",
     year: "numeric",
   });
@@ -44,6 +44,10 @@ function formatTimeLabel(totalMinutes: number) {
 
 function inferSport(ageGroup: string | null | undefined) {
   return ageGroup?.toLowerCase().includes("softball") ? "softball" : "baseball";
+}
+
+function isTeeBall(ageGroup: string | null | undefined) {
+  return ageGroup?.toLowerCase().includes("tee ball") ?? false;
 }
 
 export const dynamic = "force-dynamic";
@@ -112,11 +116,35 @@ export default async function UmpireSchedulePage({ searchParams }: PageProps) {
     if (assignmentFilter === "assigned" && !booking.umpireId) return false;
     if (assignmentFilter === "unassigned" && booking.umpireId) return false;
 
-    const sport = inferSport(booking.team?.ageGroup);
+    const ageGroup = booking.team?.ageGroup;
+
+    // Exclude Tee Ball games from umpire scheduling
+    if (isTeeBall(ageGroup)) return false;
+
+    const sport = inferSport(ageGroup);
     if (sportFilter !== "all" && sport !== sportFilter) return false;
 
     return true;
   });
+
+  const groupedBookings = filteredBookings.reduce<
+    Array<{ key: string; date: Date; items: typeof filteredBookings }>
+  >((acc, booking) => {
+    const key = toDateInputValue(booking.bookingDate);
+    const existing = acc.find((group) => group.key === key);
+
+    if (existing) {
+      existing.items.push(booking);
+    } else {
+      acc.push({
+        key,
+        date: booking.bookingDate,
+        items: [booking],
+      });
+    }
+
+    return acc;
+  }, []);
 
   return (
     <main
@@ -389,7 +417,10 @@ export default async function UmpireSchedulePage({ searchParams }: PageProps) {
             </div>
           </form>
 
-          {(selectedUmpire || assignmentFilter !== "all" || sportFilter !== "all" || endDateValue) && (
+          {(selectedUmpire ||
+            assignmentFilter !== "all" ||
+            sportFilter !== "all" ||
+            endDateValue) && (
             <div
               style={{
                 marginTop: "1rem",
@@ -422,7 +453,7 @@ export default async function UmpireSchedulePage({ searchParams }: PageProps) {
             boxShadow: "0 6px 18px rgba(0, 0, 0, 0.06)",
           }}
         >
-          {filteredBookings.length === 0 ? (
+          {groupedBookings.length === 0 ? (
             <div
               style={{
                 padding: "1rem",
@@ -434,91 +465,103 @@ export default async function UmpireSchedulePage({ searchParams }: PageProps) {
               No games match the current filters.
             </div>
           ) : (
-            <div style={{ display: "grid", gap: "0.85rem" }}>
-              {filteredBookings.map((booking) => {
-                const sport = inferSport(booking.team?.ageGroup);
-
-                return (
-                  <div
-                    key={booking.id}
+            <div style={{ display: "grid", gap: "1.5rem" }}>
+              {groupedBookings.map((group) => (
+                <section key={group.key}>
+                  <h2
                     style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "14px",
-                      padding: "1rem",
-                      backgroundColor: "#ffffff",
+                      marginBottom: "0.9rem",
+                      fontSize: "1.35rem",
+                      fontWeight: 800,
+                      color: "#0f172a",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "grid",
-                        gap: "1rem",
-                        gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(320px, 420px)",
-                        alignItems: "start",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 800, color: "#0f172a" }}>
-                          {booking.title || "Game"}
-                        </div>
+                    {formatDayHeading(group.date)}
+                  </h2>
 
-                        <div style={{ color: "#334155", marginTop: "0.2rem", fontWeight: 600 }}>
-                          {booking.team?.teamName}
-                        </div>
+                  <div style={{ display: "grid", gap: "0.85rem" }}>
+                    {group.items.map((booking) => {
+                      const sport = inferSport(booking.team?.ageGroup);
 
-                        <div style={{ color: "#334155", marginTop: "0.2rem" }}>
-                          {booking.team?.ageGroup}
-                        </div>
+                      const matchup = booking.opponent?.trim()
+                        ? `${booking.team?.teamName || "—"} vs. ${booking.opponent}`
+                        : booking.team?.teamName || "—";
 
+                      return (
                         <div
+                          key={booking.id}
                           style={{
-                            color: "#64748b",
-                            marginTop: "0.2rem",
-                            fontSize: "0.92rem",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "14px",
+                            padding: "1rem",
+                            backgroundColor: "#ffffff",
                           }}
                         >
-                          {formatDate(booking.bookingDate)} · {formatTimeLabel(booking.startTimeMinutes)} -{" "}
-                          {formatTimeLabel(booking.endTimeMinutes)}
-                        </div>
-                      </div>
+                          <div
+                            style={{
+                              display: "grid",
+                              gap: "1rem",
+                              gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(320px, 420px)",
+                              alignItems: "start",
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 800, color: "#0f172a" }}>
+                                {booking.team?.ageGroup || "—"}
+                              </div>
+                              <div style={{ color: "#334155", marginTop: "0.2rem", fontWeight: 600 }}>
+                                {matchup}
+                              </div>
+                              <div
+                                style={{
+                                  color: "#64748b",
+                                  marginTop: "0.2rem",
+                                  fontSize: "0.92rem",
+                                }}
+                              >
+                                {formatTimeLabel(booking.startTimeMinutes)} -{" "}
+                                {formatTimeLabel(booking.endTimeMinutes)}
+                              </div>
+                            </div>
 
-                      <div>
-                        <div style={{ color: "#334155", fontWeight: 700 }}>{booking.room.name}</div>
-                        <div style={{ color: "#64748b", marginTop: "0.2rem" }}>
-                          Opponent: {booking.opponent?.trim() || "—"}
-                        </div>
-                        <div style={{ color: "#64748b", marginTop: "0.2rem" }}>
-                          Sport: {sport === "softball" ? "Softball" : "Baseball"}
-                        </div>
+                            <div>
+                              <div style={{ color: "#334155", fontWeight: 700 }}>{booking.room.name}</div>
+                              <div style={{ color: "#64748b", marginTop: "0.2rem" }}>
+                                Sport: {sport === "softball" ? "Softball" : "Baseball"}
+                              </div>
 
-                        <div
-                          style={{
-                            marginTop: "0.2rem",
-                            fontWeight: 600,
-                            color: booking.umpireRecord?.name ? "#475569" : "#b91c1c",
-                          }}
-                        >
-                          Assigned: {booking.umpireRecord?.name || "Unassigned"}
-                        </div>
-                      </div>
+                              <div
+                                style={{
+                                  marginTop: "0.2rem",
+                                  fontWeight: 600,
+                                  color: booking.umpireRecord?.name ? "#475569" : "#b91c1c",
+                                }}
+                              >
+                                Assigned: {booking.umpireRecord?.name || "Unassigned"}
+                              </div>
+                            </div>
 
-                      <UmpireAssignmentActions
-                        bookingId={booking.id}
-                        currentUmpireId={booking.umpireId}
-                        currentUmpireName={booking.umpireRecord?.name || null}
-                        sport={sport}
-                        umpires={umpires
-                          .filter((umpire) => umpire.isActive)
-                          .map((umpire) => ({
-                            id: umpire.id,
-                            name: umpire.name,
-                            doesBaseball: umpire.doesBaseball,
-                            doesSoftball: umpire.doesSoftball,
-                          }))}
-                      />
-                    </div>
+                            <UmpireAssignmentActions
+                              bookingId={booking.id}
+                              currentUmpireId={booking.umpireId}
+                              currentUmpireName={booking.umpireRecord?.name || null}
+                              sport={sport}
+                              umpires={umpires
+                                .filter((umpire) => umpire.isActive)
+                                .map((umpire) => ({
+                                  id: umpire.id,
+                                  name: umpire.name,
+                                  doesBaseball: umpire.doesBaseball,
+                                  doesSoftball: umpire.doesSoftball,
+                                }))}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </section>
+              ))}
             </div>
           )}
         </div>

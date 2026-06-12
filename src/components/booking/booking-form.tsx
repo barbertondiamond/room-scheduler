@@ -352,20 +352,20 @@ export default function BookingForm({ rooms, teams = [] }: Props) {
           <label htmlFor="room" style={fieldLabelStyle}>
             Field
           </label>
-<select
-  id="room"
-  value={roomId}
-  onChange={(e) => setRoomId(e.target.value)}
-  style={fieldStyle}
-  required
->
-  <option value="">Select a field</option>
-  {rooms.map((room) => (
-    <option key={room.id} value={room.id}>
-      {roomLabel(room)}
-    </option>
-  ))}
-</select>
+			<select
+			  id="room"
+			  value={roomId}
+			  onChange={(e) => setRoomId(e.target.value)}
+			  style={fieldStyle}
+			  required
+			>
+			  <option value="">Select a field</option>
+			  {rooms.map((room) => (
+				<option key={room.id} value={room.id}>
+				  {roomLabel(room)}
+				</option>
+			  ))}
+			</select>
 
         </div>
 

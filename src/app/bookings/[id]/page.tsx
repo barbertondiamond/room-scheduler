@@ -170,6 +170,13 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
                 Back to Calendar
               </Link>
 
+              <Link
+                href="/book"
+                style={buttonStyle("#ecfeff", "#a5f3fc", "#155e75")}
+              >
+                Book a Field
+              </Link>
+
               {isAdmin && (
                 <>
                   <Link

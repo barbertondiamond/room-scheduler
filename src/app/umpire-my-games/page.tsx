@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import UmpireAssignmentActions from "@/components/admin/umpire-assignment-actions";
+import MyGamesUmpirePicker from "@/components/umpire/my-games-umpire-picker";
 
 type PageProps = {
   searchParams: Promise<{
-    sport?: string;
+    umpireId?: string;
   }>;
 };
 
@@ -40,55 +39,35 @@ function formatTimeRange(startMinutes: number, endMinutes: number) {
 }
 
 function inferSport(ageGroup: string | null | undefined) {
-  return ageGroup?.toLowerCase().includes("softball")
-    ? "softball"
-    : "baseball";
+  return ageGroup?.toLowerCase().includes("softball") ? "softball" : "baseball";
 }
 
 function isTeeBall(ageGroup: string | null | undefined) {
   return ageGroup?.toLowerCase().includes("tee ball") ?? false;
 }
 
-function filterButtonStyle(active: boolean) {
-  return {
-    display: "inline-block",
-    padding: "0.65rem 1rem",
-    borderRadius: "999px",
-    textDecoration: "none",
-    fontWeight: 700,
-    border: active ? "1px solid #93c5fd" : "1px solid #dbe3f0",
-    backgroundColor: active ? "#dbeafe" : "#f8fafc",
-    color: active ? "#1d4ed8" : "#475569",
-  } as const;
-}
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function UmpireAssignmentsPage({ searchParams }: PageProps) {
+export default async function UmpireMyGamesPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const sportFilter =
-    params.sport === "baseball" || params.sport === "softball"
-      ? params.sport
-      : "all";
+  const requestedUmpireId = typeof params.umpireId === "string" ? params.umpireId : "";
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const cookieStore = await cookies();
-  const isAdmin = cookieStore.get("admin_access")?.value === "granted";
-
-  const [bookings, umpires] = await Promise.all([
+  const [allUpcomingAssignedBookings, allActiveUmpires] = await Promise.all([
     prisma.booking.findMany({
       where: {
         status: "ACTIVE",
-        umpireId: null,
+        umpireId: { not: null },
         bookingDate: { gte: today },
         title: { in: ["Game", "Tournament", "Scrimmage"] },
       },
       include: {
         room: true,
         team: true,
+        umpireRecord: true,
       },
       orderBy: [{ bookingDate: "asc" }, { startTimeMinutes: "asc" }],
     }),
@@ -98,27 +77,46 @@ export default async function UmpireAssignmentsPage({ searchParams }: PageProps)
     }),
   ]);
 
-  const filteredBookings = bookings.filter((booking) => {
-    const ageGroup = booking.team?.ageGroup;
-
-    if (isTeeBall(ageGroup)) return false;
-
-    const sport = inferSport(ageGroup);
-    if (sportFilter !== "all" && sport !== sportFilter) return false;
-
-    return true;
+  const eligibleBookings = allUpcomingAssignedBookings.filter((booking) => {
+    return !isTeeBall(booking.team?.ageGroup);
   });
+
+  const umpireIdsWithGames = new Set(
+    eligibleBookings
+      .map((booking) => booking.umpireId)
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+  );
+
+  const availableUmpires = allActiveUmpires.filter((umpire) =>
+    umpireIdsWithGames.has(umpire.id)
+  );
+
+  const selectedUmpire = requestedUmpireId
+    ? availableUmpires.find((umpire) => umpire.id === requestedUmpireId) ?? null
+    : null;
+
+  const selectedUmpireId = selectedUmpire?.id ?? "";
+
+  const filteredBookings = selectedUmpireId
+    ? eligibleBookings.filter((booking) => booking.umpireId === selectedUmpireId)
+    : [];
 
   const groups = filteredBookings.reduce<
     Array<{ key: string; date: Date; items: typeof filteredBookings }>
   >((acc, booking) => {
     const key = dateKey(booking.bookingDate);
     const existing = acc.find((g) => g.key === key);
+
     if (existing) {
       existing.items.push(booking);
     } else {
-      acc.push({ key, date: booking.bookingDate, items: [booking] });
+      acc.push({
+        key,
+        date: booking.bookingDate,
+        items: [booking],
+      });
     }
+
     return acc;
   }, []);
 
@@ -146,85 +144,67 @@ export default async function UmpireAssignmentsPage({ searchParams }: PageProps)
             style={{
               display: "flex",
               justifyContent: "space-between",
-              flexWrap: "wrap",
               gap: "1rem",
+              flexWrap: "wrap",
+              alignItems: "start",
             }}
           >
             <div>
               <h1 style={{ marginTop: 0, marginBottom: "0.5rem" }}>
-                Unassigned Games
+                My Assigned Games
               </h1>
               <p style={{ margin: 0, color: "#4b5563" }}>
-                Upcoming games that still need an umpire.
+                Choose an umpire to view upcoming assigned games.
               </p>
             </div>
 
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
               <Link
-                href="/umpire-my-games"
+                href="/umpire-assignments"
                 style={{
                   display: "inline-block",
                   padding: "0.65rem 1rem",
-                  backgroundColor: "#ecfeff",
-                  border: "1px solid #a5f3fc",
+                  backgroundColor: "#eef2ff",
+                  border: "1px solid #c7d2fe",
                   borderRadius: "10px",
-                  color: "#155e75",
+                  color: "#1e3a8a",
                   textDecoration: "none",
                   fontWeight: 600,
                 }}
               >
-                View My Assigned Games
+                Back to Unassigned Games
               </Link>
-
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  style={{
-                    display: "inline-block",
-                    padding: "0.65rem 1rem",
-                    backgroundColor: "#eef2ff",
-                    border: "1px solid #c7d2fe",
-                    borderRadius: "10px",
-                    color: "#1e3a8a",
-                    textDecoration: "none",
-                    fontWeight: 600,
-                  }}
-                >
-                  Back to Admin
-                </Link>
-              )}
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "0.75rem",
-              flexWrap: "wrap",
-              marginTop: "1rem",
-            }}
-          >
-            <Link href="/umpire-assignments" style={filterButtonStyle(sportFilter === "all")}>
-              All
-            </Link>
-
-            <Link
-              href="/umpire-assignments?sport=baseball"
-              style={filterButtonStyle(sportFilter === "baseball")}
-            >
-              Baseball
-            </Link>
-
-            <Link
-              href="/umpire-assignments?sport=softball"
-              style={filterButtonStyle(sportFilter === "softball")}
-            >
-              Softball
-            </Link>
+          <div style={{ marginTop: "1rem" }}>
+            <MyGamesUmpirePicker
+              umpires={availableUmpires.map((umpire) => ({
+                id: umpire.id,
+                name: umpire.name,
+              }))}
+              selectedUmpireId={selectedUmpireId}
+            />
           </div>
+
+          {selectedUmpire && (
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "0.85rem 1rem",
+                borderRadius: "12px",
+                backgroundColor: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                color: "#1e3a8a",
+                fontWeight: 700,
+              }}
+            >
+              Viewing upcoming games for {selectedUmpire.name}
+            </div>
+          )}
         </div>
 
-        {groups.length === 0 ? (
+        {availableUmpires.length === 0 ? (
           <div
             style={{
               padding: "1rem",
@@ -234,7 +214,31 @@ export default async function UmpireAssignmentsPage({ searchParams }: PageProps)
               backgroundColor: "#ffffff",
             }}
           >
-            No unassigned games match the current filter.
+            No active umpires currently have upcoming assigned games.
+          </div>
+        ) : !selectedUmpireId ? (
+          <div
+            style={{
+              padding: "1rem",
+              border: "1px dashed #cbd5e1",
+              borderRadius: "12px",
+              color: "#64748b",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            Select an umpire to view assigned games.
+          </div>
+        ) : groups.length === 0 ? (
+          <div
+            style={{
+              padding: "1rem",
+              border: "1px dashed #cbd5e1",
+              borderRadius: "12px",
+              color: "#64748b",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            No upcoming assigned games found for this umpire.
           </div>
         ) : (
           <div style={{ display: "grid", gap: "1.5rem" }}>
@@ -254,7 +258,6 @@ export default async function UmpireAssignmentsPage({ searchParams }: PageProps)
                 <div style={{ display: "grid", gap: "0.85rem" }}>
                   {group.items.map((booking) => {
                     const sport = inferSport(booking.team?.ageGroup);
-
                     const matchup = booking.opponent?.trim()
                       ? `${booking.team?.teamName || "—"} vs. ${booking.opponent}`
                       : booking.team?.teamName || "—";
@@ -273,8 +276,7 @@ export default async function UmpireAssignmentsPage({ searchParams }: PageProps)
                           style={{
                             display: "grid",
                             gap: "1rem",
-                            gridTemplateColumns:
-                              "minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(320px, 420px)",
+                            gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1.1fr)",
                             alignItems: "start",
                           }}
                         >
@@ -316,26 +318,12 @@ export default async function UmpireAssignmentsPage({ searchParams }: PageProps)
                               style={{
                                 marginTop: "0.2rem",
                                 fontWeight: 600,
-                                color: "#b91c1c",
+                                color: "#475569",
                               }}
                             >
-                              Assigned: Unassigned
+                              Assigned: {booking.umpireRecord?.name || "—"}
                             </div>
                           </div>
-
-                          <UmpireAssignmentActions
-                            bookingId={booking.id}
-                            currentUmpireId={null}
-                            currentUmpireName={null}
-                            sport={sport}
-                            umpires={umpires.map((u) => ({
-                              id: u.id,
-                              name: u.name,
-                              doesBaseball: u.doesBaseball,
-                              doesSoftball: u.doesSoftball,
-                            }))}
-                            hideClearButton
-                          />
                         </div>
                       </div>
                     );

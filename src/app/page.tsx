@@ -111,6 +111,22 @@ export default function HomePage() {
             </Link>
 
             <Link
+              href="/umpire-assignments"
+              style={{
+                display: "inline-block",
+                padding: "0.9rem 1.25rem",
+                backgroundColor: "#ecfeff",
+                color: "#155e75",
+                borderRadius: "12px",
+                textDecoration: "none",
+                fontWeight: 700,
+                border: "1px solid #a5f3fc",
+              }}
+            >
+              Umpire Information
+            </Link>
+
+            <Link
               href="/admin"
               style={{
                 display: "inline-block",
