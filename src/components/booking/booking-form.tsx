@@ -153,8 +153,8 @@ export default function BookingForm({ rooms, teams = [] }: Props) {
     [teams]
   );
 
-  const [teamId, setTeamId] = useState(activeTeams[0]?.id ?? "");
-  const [roomId, setRoomId] = useState(rooms[0]?.id ?? "");
+  const [teamId, setTeamId] = useState("");
+  const [roomId, setRoomId] = useState("");
   const [date, setDate] = useState(getTodayString());
   const [startTime, setStartTime] = useState(DEFAULT_TIME);
   const [duration, setDuration] = useState("2");
@@ -190,7 +190,7 @@ export default function BookingForm({ rooms, teams = [] }: Props) {
 
   useEffect(() => {
     if (activeTeams.length > 0 && !activeTeams.some((team) => team.id === teamId)) {
-      setTeamId(activeTeams[0].id);
+      setTeamId("");
     }
   }, [activeTeams, teamId]);
 
@@ -325,42 +325,48 @@ export default function BookingForm({ rooms, teams = [] }: Props) {
           <label htmlFor="teamId" style={fieldLabelStyle}>
             Team
           </label>
-          <select
-            id="teamId"
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            style={fieldStyle}
-            required
-            disabled={activeTeams.length === 0}
-          >
-            {activeTeams.length === 0 ? (
-              <option value="">No active teams available</option>
-            ) : (
-              activeTeams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {teamLabel(team)}
-                </option>
-              ))
-            )}
-          </select>
+			<select
+			  id="teamId"
+			  value={teamId}
+			  onChange={(e) => setTeamId(e.target.value)}
+			  style={fieldStyle}
+			  required
+			  disabled={activeTeams.length === 0}
+			>
+			  {activeTeams.length === 0 ? (
+				<option value="">No active teams available</option>
+			  ) : (
+				<>
+				  <option value="">Select a team</option>
+				  {activeTeams.map((team) => (
+					<option key={team.id} value={team.id}>
+					  {teamLabel(team)}
+					</option>
+				  ))}
+				</>
+			  )}
+			</select>
         </div>
 
         <div>
           <label htmlFor="room" style={fieldLabelStyle}>
             Field
           </label>
-          <select
-            id="room"
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            style={fieldStyle}
-          >
-            {rooms.map((room) => (
-              <option key={room.id} value={room.id}>
-                {roomLabel(room)}
-              </option>
-            ))}
-          </select>
+<select
+  id="room"
+  value={roomId}
+  onChange={(e) => setRoomId(e.target.value)}
+  style={fieldStyle}
+  required
+>
+  <option value="">Select a field</option>
+  {rooms.map((room) => (
+    <option key={room.id} value={room.id}>
+      {roomLabel(room)}
+    </option>
+  ))}
+</select>
+
         </div>
 
         <div>
