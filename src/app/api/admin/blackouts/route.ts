@@ -48,9 +48,25 @@ function addDaysToDateText(dateText: string, days: number) {
   ).padStart(2, "0")}`;
 }
 
+function isValidDateText(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function dateTextToSortValue(dateText: string) {
+  const [year, month, day] = dateText.split("-").map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
 function dayBounds(dateText: string) {
   const start = easternDateTimeToUtc(dateText);
   const end = easternDateTimeToUtc(addDaysToDateText(dateText, 1));
+
+  return { start, end };
+}
+
+function dateRangeBounds(startDateText: string, endDateText: string) {
+  const start = easternDateTimeToUtc(startDateText);
+  const end = easternDateTimeToUtc(addDaysToDateText(endDateText, 1));
 
   return { start, end };
 }
@@ -80,12 +96,35 @@ export async function POST(request: Request) {
         )
       : [];
 
-    const date = typeof body.date === "string" ? body.date : "";
+    const legacyDate = typeof body.date === "string" ? body.date : "";
+    const startDate = typeof body.startDate === "string" ? body.startDate : legacyDate;
+    const endDate = typeof body.endDate === "string" ? body.endDate : startDate;
     const reason = typeof body.reason === "string" ? body.reason.trim() : "";
 
-    if (!date) {
+    if (!startDate) {
       return NextResponse.json(
-        { success: false, message: "A blackout date is required." },
+        { success: false, message: "A blackout start date is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!endDate) {
+      return NextResponse.json(
+        { success: false, message: "A blackout end date is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidDateText(startDate) || !isValidDateText(endDate)) {
+      return NextResponse.json(
+        { success: false, message: "Blackout dates must use YYYY-MM-DD format." },
+        { status: 400 }
+      );
+    }
+
+    if (dateTextToSortValue(endDate) < dateTextToSortValue(startDate)) {
+      return NextResponse.json(
+        { success: false, message: "The blackout end date cannot be before the start date." },
         { status: 400 }
       );
     }
@@ -97,7 +136,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { start, end } = dayBounds(date);
+    const { start, end } =
+      startDate === endDate ? dayBounds(startDate) : dateRangeBounds(startDate, endDate);
 
     const conflictingBookings = await prisma.booking.findMany({
       where: {
@@ -109,7 +149,7 @@ export async function POST(request: Request) {
         },
       },
       include: { room: true },
-      orderBy: [{ roomId: "asc" }, { startTimeMinutes: "asc" }],
+      orderBy: [{ roomId: "asc" }, { bookingDate: "asc" }, { startTimeMinutes: "asc" }],
     });
 
     if (conflictingBookings.length > 0) {

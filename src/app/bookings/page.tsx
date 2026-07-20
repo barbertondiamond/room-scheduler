@@ -105,8 +105,37 @@ function toDateKey(date: Date) {
 }
 
 function formatBlackoutLabel(reason: string | null | undefined) {
-  const trimmed = reason?.trim();
-  return trimmed ? `Field Unavailable ${trimmed}` : "Field Unavailable";
+  return {
+    title: "Field Unavailable",
+    reason: reason?.trim() || "",
+  };
+}
+
+function BlackoutLabel({
+  title,
+  reason,
+  titleWeight = 700,
+}: {
+  title: string;
+  reason: string;
+  titleWeight?: number;
+}) {
+  return (
+    <div>
+      <div style={{ fontWeight: titleWeight }}>{title}</div>
+
+      {reason && (
+        <div
+          style={{
+            fontWeight: 400,
+            marginTop: "0.2rem",
+          }}
+        >
+          {reason}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function buildBlackoutMap(
@@ -117,16 +146,22 @@ function buildBlackoutMap(
     reason: string | null;
   }>
 ) {
-  const blackoutMap = new Map<string, { label: string }>();
+	const blackoutMap = new Map<
+	  string,
+	  {
+		title: string;
+		reason: string;
+	  }
+	>();;
 
   for (const blackout of roomBlackouts) {
     let cursor = fromDateInputValue(toDateInputValue(blackout.startDateTime));
     const blackoutEnd = fromDateInputValue(toDateInputValue(blackout.endDateTime));
 
     while (cursor < blackoutEnd) {
-      blackoutMap.set(`${blackout.roomId}|${toDateKey(cursor)}`, {
-        label: formatBlackoutLabel(blackout.reason),
-      });
+		blackoutMap.set(`${blackout.roomId}|${toDateKey(cursor)}`, {
+		  ...formatBlackoutLabel(blackout.reason),
+		});
       cursor = addDaysToDate(cursor, 1);
     }
   }
@@ -289,15 +324,14 @@ export default async function BookingsPage({ searchParams }: PageProps) {
     }))
   );
 
-  const blackoutCellStyle = {
-    backgroundColor: "#e5e7eb",
-    color: "#374151",
-    border: "1px solid #cbd5e1",
-    borderRadius: "10px",
-    padding: "0.65rem 0.75rem",
-    fontWeight: 700,
-    textAlign: "center" as const,
-  };
+const blackoutCellStyle = {
+  backgroundColor: "#e5e7eb",
+  color: "#374151",
+  border: "1px solid #cbd5e1",
+  borderRadius: "10px",
+  padding: "0.65rem 0.75rem",
+  textAlign: "center" as const,
+};
 
   return (
     <main
@@ -850,7 +884,11 @@ export default async function BookingsPage({ searchParams }: PageProps) {
                         lineHeight: 1.4,
                       }}
                     >
-                      {roomBlackout.label}
+                      <BlackoutLabel
+						title={roomBlackout.title}
+						reason={roomBlackout.reason}
+						titleWeight={700}
+					  />
                     </div>
                   ) : roomBookings.length === 0 ? (
                     <div className="mobile-empty" style={{ marginTop: "0.85rem" }}>
@@ -1019,11 +1057,14 @@ export default async function BookingsPage({ searchParams }: PageProps) {
                               padding: "1rem",
                               textAlign: "center",
                               color: "#374151",
-                              fontWeight: 800,
                               lineHeight: 1.4,
                             }}
                           >
-                            {roomBlackout.label}
+							<BlackoutLabel
+							  title={roomBlackout.title}
+							  reason={roomBlackout.reason}
+							  titleWeight={800}
+							/>
                           </div>
                         ) : (
                           <>
@@ -1254,7 +1295,11 @@ export default async function BookingsPage({ searchParams }: PageProps) {
                                   justifyContent: "center",
                                 }}
                               >
-                                {cellBlackout.label}
+								<BlackoutLabel
+								  title={cellBlackout.title}
+								  reason={cellBlackout.reason}
+								  titleWeight={700}
+								/>
                               </div>
                             ) : cellBookings.length === 0 ? (
 							  <Link

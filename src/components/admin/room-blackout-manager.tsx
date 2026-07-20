@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -14,6 +13,7 @@ type Item = {
   id: string;
   roomName: string;
   dateValue: string;
+  endDateValue: string;
   displayDate: string;
   reason: string;
 };
@@ -22,7 +22,6 @@ type Props = {
   rooms: Room[];
   items: Item[];
 };
-
 
 const inputStyle = {
   width: "100%",
@@ -37,10 +36,15 @@ const inputStyle = {
   WebkitTextFillColor: "#0f172a",
 };
 
+function dateTextToSortValue(dateText: string) {
+  const [year, month, day] = dateText.split("-").map(Number);
+  return Date.UTC(year, month - 1, day);
+}
 
 export default function RoomBlackoutManager({ rooms, items }: Props) {
   const router = useRouter();
-  const [blackoutDate, setBlackoutDate] = useState("");
+  const [blackoutStartDate, setBlackoutStartDate] = useState("");
+  const [blackoutEndDate, setBlackoutEndDate] = useState("");
   const [reason, setReason] = useState("");
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [message, setMessage] = useState("");
@@ -48,15 +52,19 @@ export default function RoomBlackoutManager({ rooms, items }: Props) {
 
   const groupedItems = useMemo(() => {
     const grouped = new Map<string, Item[]>();
+
     for (const item of items) {
-      const key = item.dateValue;
+      const key = `${item.dateValue}|${item.endDateValue}`;
       const current = grouped.get(key) || [];
       current.push(item);
       grouped.set(key, current);
     }
-    return Array.from(grouped.entries()).map(([dateValue, values]) => ({
-      dateValue,
-      displayDate: values[0]?.displayDate || dateValue,
+
+    return Array.from(grouped.entries()).map(([key, values]) => ({
+      key,
+      dateValue: values[0]?.dateValue || "",
+      endDateValue: values[0]?.endDateValue || "",
+      displayDate: values[0]?.displayDate || key,
       values,
     }));
   }, [items]);
@@ -70,8 +78,18 @@ export default function RoomBlackoutManager({ rooms, items }: Props) {
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!blackoutDate) {
-      setMessage("Please choose a blackout date.");
+    if (!blackoutStartDate) {
+      setMessage("Please choose a blackout start date.");
+      return;
+    }
+
+    if (!blackoutEndDate) {
+      setMessage("Please choose a blackout end date.");
+      return;
+    }
+
+    if (dateTextToSortValue(blackoutEndDate) < dateTextToSortValue(blackoutStartDate)) {
+      setMessage("The blackout end date cannot be before the start date.");
       return;
     }
 
@@ -88,15 +106,18 @@ export default function RoomBlackoutManager({ rooms, items }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date: blackoutDate,
+          startDate: blackoutStartDate,
+          endDate: blackoutEndDate,
           roomIds: selectedRoomIds,
           reason,
         }),
       });
+
       const result = await response.json();
 
       if (result.success) {
-        setBlackoutDate("");
+        setBlackoutStartDate("");
+        setBlackoutEndDate("");
         setReason("");
         setSelectedRoomIds([]);
         router.refresh();
@@ -122,7 +143,9 @@ export default function RoomBlackoutManager({ rooms, items }: Props) {
       const response = await fetch(`/api/admin/blackouts/${id}`, {
         method: "DELETE",
       });
+
       const result = await response.json();
+
       if (result.success) {
         router.refresh();
       } else {
@@ -139,31 +162,144 @@ export default function RoomBlackoutManager({ rooms, items }: Props) {
   return (
     <div style={{ display: "grid", gap: "1.25rem" }}>
       <form onSubmit={handleCreate} style={{ display: "grid", gap: "1rem" }}>
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "220px 1fr auto", alignItems: "end" }}>
+        <div
+          style={{
+            display: "grid",
+            gap: "1rem",
+            gridTemplateColumns: "180px 180px 1fr auto",
+            alignItems: "end",
+          }}
+        >
           <div>
-            <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: 600, color: "#334155" }}>Blackout Date</label>
-            <input type="date" value={blackoutDate} onChange={(e) => setBlackoutDate(e.target.value)} style={inputStyle} />
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+                color: "#334155",
+              }}
+            >
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={blackoutStartDate}
+              onChange={(e) => {
+                const nextStartDate = e.target.value;
+                setBlackoutStartDate(nextStartDate);
+
+                if (!blackoutEndDate) {
+                  setBlackoutEndDate(nextStartDate);
+                }
+              }}
+              style={inputStyle}
+            />
           </div>
+
           <div>
-            <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: 600, color: "#334155" }}>Reason (optional)</label>
-            <input value={reason} onChange={(e) => setReason(e.target.value)} style={inputStyle} placeholder="Holiday, rainout, maintenance..." />
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+                color: "#334155",
+              }}
+            >
+              End Date
+            </label>
+            <input
+              type="date"
+              value={blackoutEndDate}
+              onChange={(e) => setBlackoutEndDate(e.target.value)}
+              style={inputStyle}
+            />
           </div>
-          <button type="submit" disabled={isSaving} style={{ padding: "0.85rem 1.25rem", backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "12px", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+                color: "#334155",
+              }}
+            >
+              Reason (optional)
+            </label>
+            <input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              style={inputStyle}
+              placeholder="Holiday, rainout, maintenance..."
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSaving}
+            style={{
+              padding: "0.85rem 1.25rem",
+              backgroundColor: "#2563eb",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "12px",
+              fontWeight: 700,
+              cursor: isSaving ? "default" : "pointer",
+            }}
+          >
             {isSaving ? "Saving..." : "Create Blackout"}
           </button>
         </div>
 
         <div>
-          <div style={{ fontWeight: 600, color: "#334155", marginBottom: "0.6rem" }}>Choose Fields</div>
-          <div style={{ display: "grid", gap: "0.6rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div style={{ fontWeight: 600, color: "#334155", marginBottom: "0.6rem" }}>
+            Choose Fields
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: "0.6rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            }}
+          >
             {rooms.map((room) => {
               const checked = selectedRoomIds.includes(room.id);
+
               return (
-                <label key={room.id} style={{ display: "flex", gap: "0.7rem", alignItems: "flex-start", backgroundColor: checked ? "#eff6ff" : "#f8fafc", border: checked ? "1px solid #93c5fd" : "1px solid #e2e8f0", borderRadius: "12px", padding: "0.8rem 0.9rem", cursor: "pointer" }}>
-                  <input type="checkbox" checked={checked} onChange={() => toggleRoom(room.id)} style={{ marginTop: "0.2rem" }} />
+                <label
+                  key={room.id}
+                  style={{
+                    display: "flex",
+                    gap: "0.7rem",
+                    alignItems: "flex-start",
+                    backgroundColor: checked ? "#eff6ff" : "#f8fafc",
+                    border: checked ? "1px solid #93c5fd" : "1px solid #e2e8f0",
+                    borderRadius: "12px",
+                    padding: "0.8rem 0.9rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleRoom(room.id)}
+                    style={{ marginTop: "0.2rem" }}
+                  />
                   <span>
-                    <span style={{ display: "block", fontWeight: 700, color: "#0f172a" }}>{room.name}</span>
-                    <span style={{ display: "block", color: "#64748b", marginTop: "0.15rem", fontSize: "0.9rem" }}>{room.description.trim() || "No description"}</span>
+                    <span style={{ display: "block", fontWeight: 700, color: "#0f172a" }}>
+                      {room.name}
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        color: "#64748b",
+                        marginTop: "0.15rem",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      {room.description.trim() || "No description"}
+                    </span>
                   </span>
                 </label>
               );
@@ -174,27 +310,74 @@ export default function RoomBlackoutManager({ rooms, items }: Props) {
 
       {message && <div style={{ color: "#991b1b", fontWeight: 600 }}>{message}</div>}
 
-      <div>        
-		<h2 style={{ marginTop: 0, marginBottom: "0.75rem", fontWeight: 800 }}>
-		  Current & Future Blackouts
-		</h2>
+      <div>
+        <h2 style={{ marginTop: 0, marginBottom: "0.75rem", fontWeight: 800 }}>
+          Current & Future Blackouts
+        </h2>
+
         {groupedItems.length === 0 ? (
-          <div style={{ padding: "1rem", border: "1px dashed #cbd5e1", borderRadius: "12px", color: "#64748b" }}>
+          <div
+            style={{
+              padding: "1rem",
+              border: "1px dashed #cbd5e1",
+              borderRadius: "12px",
+              color: "#64748b",
+            }}
+          >
             No field blackouts have been created yet.
           </div>
         ) : (
           <div style={{ display: "grid", gap: "1rem" }}>
             {groupedItems.map((group) => (
-              <div key={group.dateValue} style={{ border: "1px solid #e2e8f0", borderRadius: "14px", backgroundColor: "#f8fafc", padding: "1rem" }}>
-                <div style={{ fontWeight: 600, color: "#0f172a", marginBottom: "0.75rem" }}>{group.displayDate}</div>
+              <div
+                key={group.key}
+                style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "14px",
+                  backgroundColor: "#f8fafc",
+                  padding: "1rem",
+                }}
+              >
+                <div style={{ fontWeight: 600, color: "#0f172a", marginBottom: "0.75rem" }}>
+                  {group.displayDate}
+                </div>
+
                 <div style={{ display: "grid", gap: "0.65rem" }}>
                   {group.values.map((item) => (
-                    <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "0.85rem 0.95rem" }}>
+                    <div
+                      key={item.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "1rem",
+                        backgroundColor: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        padding: "0.85rem 0.95rem",
+                      }}
+                    >
                       <div>
                         <div style={{ fontWeight: 700, color: "#0f172a" }}>{item.roomName}</div>
-                        <div style={{ color: "#64748b", marginTop: "0.2rem" }}>{item.reason.trim() || "Whole-day blackout"}</div>
+                        <div style={{ color: "#64748b", marginTop: "0.2rem" }}>
+                          {item.reason.trim() || "Whole-day blackout"}
+                        </div>
                       </div>
-                      <button type="button" onClick={() => handleDelete(item.id, item.roomName, item.displayDate)} disabled={isSaving} style={{ padding: "0.55rem 0.8rem", backgroundColor: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontWeight: 700, cursor: isSaving ? "default" : "pointer" }}>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(item.id, item.roomName, item.displayDate)}
+                        disabled={isSaving}
+                        style={{
+                          padding: "0.55rem 0.8rem",
+                          backgroundColor: "#fee2e2",
+                          border: "1px solid #fca5a5",
+                          borderRadius: "8px",
+                          color: "#991b1b",
+                          fontWeight: 700,
+                          cursor: isSaving ? "default" : "pointer",
+                        }}
+                      >
                         Delete
                       </button>
                     </div>

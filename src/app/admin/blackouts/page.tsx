@@ -9,17 +9,13 @@ function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 
-function toDateInputValue(date: Date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function getEasternTodayValue() {
+function getEasternDateValue(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(date);
 
   const year = parts.find((part) => part.type === "year")?.value ?? "";
   const month = parts.find((part) => part.type === "month")?.value ?? "";
@@ -28,8 +24,24 @@ function getEasternTodayValue() {
   return `${year}-${month}-${day}`;
 }
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString("en-US", {
+function addDaysToDateText(dateText: string, days: number) {
+  const [year, month, day] = dateText.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
+function dateTextToLocalDate(dateText: string) {
+  return new Date(`${dateText}T00:00:00`);
+}
+
+function getEasternTodayValue() {
+  return getEasternDateValue(new Date());
+}
+
+function formatDateFromDateText(dateText: string) {
+  return dateTextToLocalDate(dateText).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -37,18 +49,26 @@ function formatDate(date: Date) {
   });
 }
 
-export default async function AdminBlackoutsPage() {
-	const todayValue = getEasternTodayValue();
-	const todayStart = new Date(`${todayValue}T00:00:00`);
+function formatDateRange(startDateValue: string, endDateValue: string) {
+  if (startDateValue === endDateValue) {
+    return formatDateFromDateText(startDateValue);
+  }
 
-	const [rooms, blackouts] = await Promise.all([
+  return `${formatDateFromDateText(startDateValue)} - ${formatDateFromDateText(endDateValue)}`;
+}
+
+export default async function AdminBlackoutsPage() {
+  const todayValue = getEasternTodayValue();
+  const todayStart = new Date(`${todayValue}T00:00:00`);
+
+  const [rooms, blackouts] = await Promise.all([
     prisma.room.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
     }),
     prisma.roomBlackout.findMany({
       where: {
-        endDateTime: { gt: new Date(`${todayValue}T00:00:00`) },
+        endDateTime: { gt: todayStart },
       },
       include: { room: true },
       orderBy: [{ startDateTime: "asc" }, { roomId: "asc" }],
@@ -87,7 +107,6 @@ export default async function AdminBlackoutsPage() {
       `}</style>
 
       <div className="blackouts-shell">
-        {/* HEADER */}
         <div className="blackouts-card" style={{ marginBottom: "1.5rem" }}>
           <h1 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.9rem" }}>
             Blackout Field Dates
@@ -101,14 +120,14 @@ export default async function AdminBlackoutsPage() {
               lineHeight: 1.5,
             }}
           >
-            Blackout selected fields for full days. A blackout will only be created if none of the
-            selected fields already have bookings on that day.
+            Blackout selected fields for full days or date ranges. A blackout will only be
+            created if none of the selected fields already have bookings during the selected
+            date range.
           </p>
 
           <AdminNav todayValue={todayValue} />
         </div>
 
-        {/* MANAGER */}
         <div className="blackouts-card">
           <RoomBlackoutManager
             rooms={rooms.map((room) => ({
@@ -116,13 +135,20 @@ export default async function AdminBlackoutsPage() {
               name: room.name,
               description: room.description || "",
             }))}
-            items={blackouts.map((item) => ({
-              id: item.id,
-              roomName: item.room.name,
-              dateValue: toDateInputValue(item.startDateTime),
-              displayDate: formatDate(item.startDateTime),
-              reason: item.reason || "",
-            }))}
+            items={blackouts.map((item) => {
+              const startDateValue = getEasternDateValue(item.startDateTime);
+              const endExclusiveDateValue = getEasternDateValue(item.endDateTime);
+              const endDateValue = addDaysToDateText(endExclusiveDateValue, -1);
+
+              return {
+                id: item.id,
+                roomName: item.room.name,
+                dateValue: startDateValue,
+                endDateValue,
+                displayDate: formatDateRange(startDateValue, endDateValue),
+                reason: item.reason || "",
+              };
+            })}
           />
         </div>
       </div>
