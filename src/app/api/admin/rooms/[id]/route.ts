@@ -44,6 +44,7 @@ export async function PATCH(
       isActive?: boolean;
       name?: string;
       description?: string | null;
+      address?: string | null;
       allowGames?: boolean;
       allowPractices?: boolean;
       allowScrimmages?: boolean;
@@ -84,6 +85,11 @@ export async function PATCH(
     if (typeof body.description === "string") {
       const description = body.description.trim();
       data.description = description || null;
+    }
+
+    if (typeof body.address === "string") {
+      const address = body.address.trim();
+      data.address = address || null;
     }
 
     if (typeof body.allowGames === "boolean") {

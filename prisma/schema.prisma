@@ -8,28 +8,29 @@ datasource db {
 }
 
 model Room {
-  id          String         @id @default(uuid())
-  name        String
-  description String?
-  isActive    Boolean        @default(true)
-  allowGames        Boolean        @default(true)
-  allowPractices    Boolean        @default(true)
-  allowScrimmages   Boolean        @default(true)
-  allowOther        Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  bookings    Booking[]
-  blackouts   RoomBlackout[]
+  id              String         @id @default(uuid())
+  name            String
+  description     String?
+  address         String?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  allowGames      Boolean        @default(true)
+  allowOther      Boolean        @default(true)
+  allowPractices  Boolean        @default(true)
+  allowScrimmages Boolean        @default(true)
+  bookings        Booking[]
+  blackouts       RoomBlackout[]
 }
 
 model AdminUser {
   id              String         @id @default(uuid())
   name            String
   email           String         @unique
-  passwordHash 	  String
   role            UserRole       @default(ADMIN)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  passwordHash    String
   auditLogs       AuditLog[]
   createdBookings Booking[]      @relation("CreatedBookings")
   updatedBookings Booking[]      @relation("UpdatedBookings")
@@ -39,25 +40,25 @@ model AdminUser {
 model Booking {
   id               String        @id @default(uuid())
   roomId           String
-  teamId           String?
   bookingDate      DateTime
   startTimeMinutes Int
   endTimeMinutes   Int
   durationBlocks   Int
   title            String?
   notes            String?
-  opponent         String?
   status           BookingStatus @default(ACTIVE)
   overrideConflict Boolean       @default(false)
   createdByUserId  String?
   updatedByUserId  String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+  opponent         String?
   umpireId         String?
-  umpireRecord     Umpire?       @relation(fields: [umpireId], references: [id], onDelete: SetNull)
+  teamId           String?
   createdBy        AdminUser?    @relation("CreatedBookings", fields: [createdByUserId], references: [id])
   room             Room          @relation(fields: [roomId], references: [id])
-  team             Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  team             Team?         @relation(fields: [teamId], references: [id])
+  umpireRecord     Umpire?       @relation(fields: [umpireId], references: [id])
   updatedBy        AdminUser?    @relation("UpdatedBookings", fields: [updatedByUserId], references: [id])
 
   @@index([roomId, bookingDate])
@@ -111,19 +112,19 @@ model Umpire {
 }
 
 model Team {
-  id         String     @id @default(cuid())
-  teamName   String
-  coachName  String
-  coachEmail String
-  coachPhone String?
-  ageGroup   String
-  season     TeamSeason
-  year       Int
-  isActive   Boolean    @default(true)
-  requiresUmpire Boolean @default(true)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  bookings   Booking[]
+  id             String     @id @default(cuid())
+  teamName       String
+  coachName      String
+  coachEmail     String
+  ageGroup       String
+  season         TeamSeason
+  year           Int
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  coachPhone     String?
+  isActive       Boolean    @default(true)
+  requiresUmpire Boolean    @default(true)
+  bookings       Booking[]
 
   @@index([teamName])
   @@index([ageGroup])

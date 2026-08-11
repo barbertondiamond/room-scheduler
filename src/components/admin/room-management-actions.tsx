@@ -7,6 +7,7 @@ type Room = {
   id: string;
   name: string;
   description?: string | null;
+  address?: string | null;
   isActive: boolean;
   allowGames: boolean;
   allowPractices: boolean;
@@ -86,6 +87,9 @@ export default function RoomManagementActions(props: Props) {
   const [description, setDescription] = useState(
     props.mode === "create" ? "" : props.room.description || ""
   );
+  const [address, setAddress] = useState(
+    props.mode === "create" ? "" : props.room.address || ""
+  );
 
   const [allowGames, setAllowGames] = useState(
     props.mode === "create" ? true : props.room.allowGames
@@ -105,6 +109,9 @@ export default function RoomManagementActions(props: Props) {
   );
   const [displayDescription, setDisplayDescription] = useState(
     props.mode === "create" ? "" : props.room.description || ""
+  );
+  const [displayAddress, setDisplayAddress] = useState(
+    props.mode === "create" ? "" : props.room.address || ""
   );
   const [displayIsActive, setDisplayIsActive] = useState(
     props.mode === "create" ? true : props.room.isActive
@@ -132,6 +139,7 @@ export default function RoomManagementActions(props: Props) {
 
     setName(props.room.name);
     setDescription(props.room.description || "");
+    setAddress(props.room.address || "");
     setAllowGames(props.room.allowGames);
     setAllowPractices(props.room.allowPractices);
     setAllowScrimmages(props.room.allowScrimmages);
@@ -139,6 +147,7 @@ export default function RoomManagementActions(props: Props) {
 
     setDisplayName(props.room.name);
     setDisplayDescription(props.room.description || "");
+    setDisplayAddress(props.room.address || "");
     setDisplayIsActive(props.room.isActive);
     setDisplayAllowGames(props.room.allowGames);
     setDisplayAllowPractices(props.room.allowPractices);
@@ -149,6 +158,7 @@ export default function RoomManagementActions(props: Props) {
     props.mode === "manage" ? props.room.id : null,
     props.mode === "manage" ? props.room.name : null,
     props.mode === "manage" ? props.room.description : null,
+    props.mode === "manage" ? props.room.address : null,
     props.mode === "manage" ? props.room.isActive : null,
     props.mode === "manage" ? props.room.allowGames : null,
     props.mode === "manage" ? props.room.allowPractices : null,
@@ -175,6 +185,7 @@ export default function RoomManagementActions(props: Props) {
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
+          address: address.trim(),
           allowGames,
           allowPractices,
           allowScrimmages,
@@ -187,6 +198,7 @@ export default function RoomManagementActions(props: Props) {
       if (result.success) {
         setName("");
         setDescription("");
+        setAddress("");
         setAllowGames(true);
         setAllowPractices(true);
         setAllowScrimmages(true);
@@ -250,6 +262,7 @@ export default function RoomManagementActions(props: Props) {
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
+          address: address.trim(),
           allowGames,
           allowPractices,
           allowScrimmages,
@@ -262,6 +275,7 @@ export default function RoomManagementActions(props: Props) {
       if (result.success) {
         setDisplayName(result.room.name);
         setDisplayDescription(result.room.description || "");
+        setDisplayAddress(result.room.address || "");
         setDisplayAllowGames(result.room.allowGames);
         setDisplayAllowPractices(result.room.allowPractices);
         setDisplayAllowScrimmages(result.room.allowScrimmages);
@@ -269,6 +283,7 @@ export default function RoomManagementActions(props: Props) {
 
         setName(result.room.name);
         setDescription(result.room.description || "");
+        setAddress(result.room.address || "");
         setAllowGames(result.room.allowGames);
         setAllowPractices(result.room.allowPractices);
         setAllowScrimmages(result.room.allowScrimmages);
@@ -292,6 +307,7 @@ export default function RoomManagementActions(props: Props) {
 
     setName(displayName);
     setDescription(displayDescription);
+    setAddress(displayAddress);
     setAllowGames(displayAllowGames);
     setAllowPractices(displayAllowPractices);
     setAllowScrimmages(displayAllowScrimmages);
@@ -389,7 +405,7 @@ export default function RoomManagementActions(props: Props) {
         style={{
           display: "grid",
           gap: "1rem",
-          gridTemplateColumns: "1fr 1.4fr auto",
+          gridTemplateColumns: "1fr 1.2fr 1.4fr auto",
           alignItems: "end",
         }}
       >
@@ -422,6 +438,25 @@ export default function RoomManagementActions(props: Props) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             style={fieldStyle}
+          />
+        </div>
+
+        <div>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.4rem",
+              fontWeight: 600,
+              color: "#334155",
+            }}
+          >
+            Address
+          </label>
+          <input
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            style={fieldStyle}
+            placeholder="Street address, city, state ZIP"
           />
         </div>
 
@@ -489,7 +524,7 @@ export default function RoomManagementActions(props: Props) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1.2fr 1.3fr 120px 120px 1.4fr",
+          gridTemplateColumns: "1fr 1.2fr 1.4fr 100px 100px 1.4fr",
           gap: "1rem",
           alignItems: "start",
         }}
@@ -516,6 +551,24 @@ export default function RoomManagementActions(props: Props) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               style={compactFieldStyle}
+            />
+          )}
+        </div>
+
+        <div>
+          <div style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "0.25rem" }}>
+            Address
+          </div>
+          {!isEditing ? (
+            <div style={{ color: "#475569", lineHeight: 1.4 }}>
+              {displayAddress.trim() || "—"}
+            </div>
+          ) : (
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              style={compactFieldStyle}
+              placeholder="Street address, city, state ZIP"
             />
           )}
         </div>

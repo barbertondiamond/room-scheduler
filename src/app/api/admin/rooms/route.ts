@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const description =
       typeof body.description === "string" ? body.description.trim() : "";
+    const address = typeof body.address === "string" ? body.address.trim() : "";
 
     const allowGames = parseBoolean(body.allowGames, true);
     const allowPractices = parseBoolean(body.allowPractices, true);
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       data: {
         name,
         description: description || null,
+        address: address || null,
         isActive: true,
         allowGames,
         allowPractices,
