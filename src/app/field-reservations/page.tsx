@@ -736,10 +736,23 @@ export default async function FieldReservationsPage({ searchParams }: PageProps)
               </h2>
 
               {selectedRoom.description && (
-                <p style={{ marginTop: 0, marginBottom: "1rem", color: "#64748b" }}>
-                  {selectedRoom.description}
-                </p>
-              )}
+				  <p style={{ marginTop: 0, marginBottom: "0.35rem", color: "#64748b" }}>
+					{selectedRoom.description}
+				  </p>
+				)}
+
+				{selectedRoom.address && (
+				  <p
+					style={{
+					  marginTop: 0,
+					  marginBottom: "1rem",
+					  color: "#64748b",
+					  lineHeight: 1.45,
+					}}
+				  >
+					{selectedRoom.address}
+				  </p>
+				)}
 
               {reservationEvents.length === 0 ? (
                 <div className="empty-state">

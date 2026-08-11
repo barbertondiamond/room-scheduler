@@ -872,10 +872,12 @@ const blackoutCellStyle = {
               return (
                 <section key={room.id} className="mobile-day-section">
                   <h2 className="mobile-room-heading">{room.name}</h2>
-                  {room.description && (
-                    <div className="mobile-room-description">{room.description}</div>
-                  )}
-
+					{room.description && (
+					  <div className="mobile-room-description">{room.description}</div>
+					)}
+					{room.address && (
+					  <div className="mobile-room-description">{room.address}</div>
+					)}
                   {roomBlackout ? (
                     <div
                       style={{
@@ -981,8 +983,8 @@ const blackoutCellStyle = {
               }}
             >
               <div style={{ display: "flex", gap: "1rem", minWidth: "1200px" }}>
-                <div style={{ width: "100px", flexShrink: 0 }}>
-                  <div style={{ height: "48px" }} />
+                <div style={{ width: "65px", flexShrink: 0 }}>
+                  <div style={{ height: "88px" }} />
                   <div style={{ position: "relative", height: `${totalHeight}px` }}>
                     {slots.map((slot, index) => (
                       <div
@@ -1010,7 +1012,7 @@ const blackoutCellStyle = {
                     <div key={room.id} style={{ minWidth: "220px", flex: 1 }}>
                       <div
                         style={{
-                          height: "60px",
+                          height: "84px",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
@@ -1023,17 +1025,29 @@ const blackoutCellStyle = {
                         }}
                       >
                         <div style={{ fontWeight: 700, color: "#334155" }}>{room.name}</div>
-                        {room.description && (
-                          <div
-                            style={{
-                              fontSize: "0.82rem",
-                              color: "#64748b",
-                              marginTop: "0.15rem",
-                            }}
-                          >
-                            {room.description}
-                          </div>
-                        )}
+						  {room.description && (
+						    <div
+						  	  style={{
+							  fontSize: "0.82rem",
+							  color: "#64748b",
+							  marginTop: "0.15rem",
+							}}
+							>
+							  {room.description}
+							</div>
+						  )}
+						  {room.address && (
+						    <div
+							  style={{
+								fontSize: "0.78rem",
+								color: "#64748b",
+								marginTop: "0.12rem",
+								lineHeight: 1.25,
+							  }}
+							>
+							  {room.address}
+							</div>
+						  )}
                       </div>
 
                       <div
@@ -1248,13 +1262,27 @@ const blackoutCellStyle = {
                         }}
                       >
                         <div style={{ fontWeight: 700, color: "#334155" }}>{room.name}</div>
-                        {room.description && (
-                          <div
-                            style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "0.18rem" }}
-                          >
-                            {room.description}
-                          </div>
-                        )}
+
+							{room.description && (
+							  <div
+								style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "0.18rem" }}
+							  >
+								{room.description}
+							  </div>
+							)}
+
+							{room.address && (
+							  <div
+								style={{
+								  fontSize: "0.78rem",
+								  color: "#64748b",
+								  marginTop: "0.15rem",
+								  lineHeight: 1.25,
+								}}
+							  >
+								{room.address}
+							  </div>
+							)}
                       </div>
 
                       {weekDays.map((day) => {

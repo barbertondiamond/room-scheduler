@@ -414,14 +414,29 @@ const filteredBookings = bookings.filter((booking) => {
                           </div>
 
                           <div>
-                            <div className="umpire-detail-room">{booking.room.name}</div>
-                            <div className="umpire-detail-sport">
-                              Sport: {sport === "softball" ? "Softball" : "Baseball"}
-                            </div>
-                            <div className="umpire-detail-status">
-                              Assigned: Unassigned
-                            </div>
-                          </div>
+							  <div className="umpire-detail-room">{booking.room.name}</div>
+
+							  {booking.room.address?.trim() && (
+								<div
+								  style={{
+									color: "#64748b",
+									fontSize: "0.9rem",
+									marginTop: "0.15rem",
+									lineHeight: 1.35,
+								  }}
+								>
+								  {booking.room.address}
+								</div>
+							  )}
+
+							  <div className="umpire-detail-sport">
+								Sport: {sport === "softball" ? "Softball" : "Baseball"}
+							  </div>
+
+							  <div className="umpire-detail-status">
+								Assigned: Unassigned
+							  </div>
+						  </div>
 
                           <UmpireAssignmentActions
                             bookingId={booking.id}

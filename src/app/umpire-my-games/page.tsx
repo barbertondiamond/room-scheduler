@@ -401,14 +401,29 @@ const eligibleBookings = allUpcomingAssignedBookings.filter((booking) => {
                           </div>
 
                           <div>
-                            <div className="my-games-room">{booking.room.name}</div>
-                            <div className="my-games-sport">
-                              Sport: {sport === "softball" ? "Softball" : "Baseball"}
-                            </div>
-                            <div className="my-games-assigned">
-                              Assigned: {booking.umpireRecord?.name || "—"}
-                            </div>
-                          </div>
+							  <div className="my-games-room">{booking.room.name}</div>
+
+							  {booking.room.address?.trim() && (
+								<div
+								  style={{
+									color: "#64748b",
+									fontSize: "0.9rem",
+									marginTop: "0.15rem",
+									lineHeight: 1.35,
+								  }}
+								>
+								  {booking.room.address}
+								</div>
+							  )}
+
+							  <div className="my-games-sport">
+								Sport: {sport === "softball" ? "Softball" : "Baseball"}
+							  </div>
+
+							  <div className="my-games-assigned">
+								Assigned: {booking.umpireRecord?.name || "—"}
+							  </div>
+							</div>
                         </div>
                       </div>
                     );
