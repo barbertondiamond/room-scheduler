@@ -1,6 +1,6 @@
 import React from "react";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import AdminNav from "@/components/admin/admin-nav";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +11,6 @@ type PageProps = {
     endDate?: string;
     minEvents?: string;
     roomId?: string | string[];
-    fieldsSubmitted?: string;
   }>;
 };
 
@@ -134,21 +133,7 @@ function getOpponentLabel(opponent: string | null) {
   return opponent?.trim() || "";
 }
 
-function publicNavLinkStyle(backgroundColor: string, borderColor: string, color: string) {
-  return {
-    display: "inline-block",
-    padding: "0.65rem 1rem",
-    backgroundColor,
-    border: `1px solid ${borderColor}`,
-    borderRadius: "10px",
-    color,
-    textDecoration: "none",
-    fontWeight: 600,
-    textAlign: "center" as const,
-  };
-}
-
-export default async function FieldReservationsPage({ searchParams }: PageProps) {
+export default async function AdminFieldActivityPage({ searchParams }: PageProps) {
   const params = await searchParams;
 
   const todayValue = getEasternTodayValue();
@@ -172,10 +157,7 @@ export default async function FieldReservationsPage({ searchParams }: PageProps)
 
   const minEventsRaw = Number(params.minEvents);
   const selectedMinEvents =
-    Number.isFinite(minEventsRaw) && minEventsRaw >= 1 ? Math.floor(minEventsRaw) : 1;
-
-  const cookieStore = await cookies();
-  const isAdmin = cookieStore.get("admin_access")?.value === "granted";
+    Number.isFinite(minEventsRaw) && minEventsRaw >= 1 ? Math.floor(minEventsRaw) : 2;
 
   const activeRooms = await prisma.room.findMany({
     where: {
@@ -188,14 +170,11 @@ export default async function FieldReservationsPage({ searchParams }: PageProps)
 
   const requestedRoomIds = normalizeRoomIds(params.roomId);
   const activeRoomIds = new Set(activeRooms.map((room) => room.id));
-  const fieldsSubmitted = params.fieldsSubmitted === "1";
 
-const selectedRoomIds =
-  fieldsSubmitted
-    ? requestedRoomIds.filter((roomId) => activeRoomIds.has(roomId))
-    : [];
-	
-  const noFieldsSelected = selectedRoomIds.length === 0;
+  const selectedRoomIds =
+    requestedRoomIds.length > 0
+      ? requestedRoomIds.filter((roomId) => activeRoomIds.has(roomId))
+      : activeRooms.map((room) => room.id);
 
   const startDate = fromDateInputValue(selectedStartDate);
   const endDateExclusive = fromDateInputValue(addDays(selectedEndDate, 1));
@@ -276,7 +255,7 @@ const selectedRoomIds =
       typeLabel: bookingType,
       teamLabel: getTeamLabel(booking),
       opponentLabel: getOpponentLabel(booking.opponent),
-      href: `/bookings/${booking.id}?date=${dateValue}&view=day`,
+      href: `/bookings/${booking.id}?date=${dateValue}&view=day&from=admin`,
       sortStartMinutes: booking.startTimeMinutes,
     });
 
@@ -319,13 +298,6 @@ const selectedRoomIds =
           border-radius: 16px;
           padding: 1.25rem;
           box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-        }
-
-        .activity-header-links {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-          margin-top: 1rem;
         }
 
         .activity-filter-grid {
@@ -485,15 +457,6 @@ const selectedRoomIds =
             border-radius: 14px;
           }
 
-          .activity-header-links {
-            flex-direction: column;
-          }
-
-          .activity-header-links a {
-            width: 100%;
-            box-sizing: border-box;
-          }
-
           .activity-filter-grid {
             grid-template-columns: 1fr;
           }
@@ -516,7 +479,7 @@ const selectedRoomIds =
       <div className="activity-shell">
         <div className="activity-card" style={{ marginBottom: "1.5rem" }}>
           <h1 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.9rem" }}>
-            Reservations by Field
+            Field Activity Report
           </h1>
 
           <p
@@ -524,66 +487,18 @@ const selectedRoomIds =
               marginTop: 0,
               color: "#4b5563",
               lineHeight: 1.5,
-              marginBottom: "0",
+              marginBottom: "1rem",
             }}
           >
-            View busy field days at a glance. Use the filters to choose dates, fields,
-            and the minimum number of events to show.
+            Find busy field days at a glance. This can help identify good days to open the
+            concession stand.
           </p>
 
-<div className="activity-header-links">
-  {React.createElement(
-    "a",
-    {
-      href: "/",
-      style: publicNavLinkStyle("#eef2ff", "#c7d2fe", "#1e3a8a"),
-    },
-    "Home"
-  )}
-
-  {React.createElement(
-    "a",
-    {
-      href: "/bookings",
-      style: publicNavLinkStyle("#f8fafc", "#dbe3f0", "#475569"),
-    },
-    "Calendar"
-  )}
-
-  {React.createElement(
-    "a",
-    {
-      href: "/team-schedule",
-      style: publicNavLinkStyle("#f0fdf4", "#bbf7d0", "#166534"),
-    },
-    "Reservations by Team"
-  )}
-
-  {React.createElement(
-    "a",
-    {
-      href: "/book",
-      style: publicNavLinkStyle("#ecfeff", "#a5f3fc", "#155e75"),
-    },
-    "Book a Field"
-  )}
-
-  {isAdmin &&
-    React.createElement(
-      "a",
-      {
-        href: "/admin",
-        style: publicNavLinkStyle("#f8fafc", "#dbe3f0", "#475569"),
-      },
-      "Admin"
-    )}
-</div>
-</div>
+          <AdminNav todayValue={todayValue} />
+        </div>
 
         <div className="activity-card" style={{ marginBottom: "1.5rem" }}>
           <form method="GET" style={{ display: "grid", gap: "1.25rem" }}>
-            <input type="hidden" name="fieldsSubmitted" value="1" />
-
             <div className="activity-filter-grid">
               <div className="activity-filter-field">
                 <label className="activity-label" htmlFor="startDate">
@@ -681,18 +596,14 @@ const selectedRoomIds =
           </form>
         </div>
 
-		
-        
-          {noFieldsSelected ? (
-			  <div className="activity-empty">
-				Select one or more fields above and click Load Report.
-			  </div>
-			) : activityDays.length === 0 ? (
-			  <div className="activity-empty">
-				No dates matched the selected filters. Try lowering the minimum event count,
-				expanding the date range, or selecting more fields.
-			  </div>
-			) : (
+
+
+        {activityDays.length === 0 ? (
+          <div className="activity-empty">
+            No dates matched the selected filters. Try lowering the minimum event count,
+            expanding the date range, or selecting more fields.
+          </div>
+        ) : (
           <div className="activity-day-list">
             {activityDays.map((day) => (
               <section key={day.dateValue} className="activity-day-card">
